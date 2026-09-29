@@ -1,0 +1,62 @@
+{
+  "name": "pikit-telegram-bot",
+  "version": "0.0.0",
+  "description": "An AI agent in Telegram, on Cloudflare: a pikit project.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "scripts": {
+    "dev": "pikit dev",
+    "doctor": "pikit doctor",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy | node src/pikit/channel-telegram-webhook/setup-webhook.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "file:vendor/pikit-pi-extension-shim-0.0.0-79c4fed87c.tgz",
+    "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-8926dea49c.tgz",
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-92633a67dc.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-37da6beed7.tgz",
+    "diff": "8.0.4",
+    "isomorphic-git": "1.42.3",
+    "just-bash": "3.4.2",
+    "quickjs-emscripten-core": "0.32.0",
+    "typebox": "1.3.27"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2",
+    "wrangler": "4.143.0"
+  },
+  "overrides": {
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-92633a67dc.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-8926dea49c.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-37da6beed7.tgz",
+    "@pikit/pi-extension-shim": "file:vendor/pikit-pi-extension-shim-0.0.0-79c4fed87c.tgz"
+  },
+  "cloudflare": {
+    "bindings": {
+      "TELEGRAM_BOT_TOKEN": {
+        "description": "Your bot's token. In Telegram, open [@BotFather](https://t.me/BotFather), send `/newbot`, choose a name and a username ending in `bot`, and paste the token it answers (two parts separated by `:`)."
+      },
+      "TELEGRAM_WEBHOOK_SECRET": {
+        "description": "A random string that Telegram sends with every message, so only Telegram reaches your bot: 16 to 256 letters, digits, `_` or `-`. Run `openssl rand -hex 32`, or type any long random string of those characters. You never need it again."
+      },
+      "TELEGRAM_CLAIM_CODE": {
+        "description": "A passphrase you choose, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/claim <passphrase>` to your bot: your chat is the one it talks to. Whoever knows it can claim the bot too: keep it secret, and change it to revoke every claim."
+      },
+      "OPENROUTER_API_KEY": {
+        "description": "Your [OpenRouter API key](https://openrouter.ai/settings/keys): the model your agent runs on. You pay OpenRouter for its tokens; a credit limit on the key caps it."
+      },
+      "BRAVE_API_KEY": {
+        "description": "Optional: a [Brave Search API key](https://api-dashboard.search.brave.com) for the agent's web search (the free plan works). Without one, the bot works and only web search fails; if the form wants a value, type `none`."
+      },
+      "CONVERSATION": {
+        "description": "One Durable Object per Telegram chat, SQLite-backed: its conversation, sessions and the agent's workspace. Nothing to set."
+      }
+    }
+  }
+}

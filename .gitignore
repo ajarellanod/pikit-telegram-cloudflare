@@ -1,0 +1,15 @@
+node_modules/
+# Secrets: pikit configure writes them here (mode 0600). Never committed, never in an image.
+.env
+.env.*
+!.env.example
+# State: sessions, conversations, model credentials, the agents' workspace.
+.pikit/
+# wrangler's own: local secrets, the local objects' state and its build cache.
+.dev.vars*
+.wrangler/
+# A Deploy to Cloudflare template: the secrets' names go in the repository, and npm's lockfile is
+# the one Workers Builds installs with (after `pikit add` or `bun install`, run `npm install`).
+!.dev.vars.example
+bun.lock
+bun.lockb

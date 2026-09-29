@@ -1,0 +1,8 @@
+# The Worker's secrets. The Deploy to Cloudflare button asks for each of them (package.json's
+# "cloudflare.bindings" says what to type), and keeps them in Cloudflare, never in this repository.
+# To run it locally (npx wrangler dev), copy this file to .dev.vars, which Git ignores, and fill it in.
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=
+TELEGRAM_CLAIM_CODE=
+OPENROUTER_API_KEY=
+BRAVE_API_KEY=
