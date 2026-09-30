@@ -15,11 +15,11 @@
     "deploy": "wrangler deploy | node src/pikit/channel-telegram-webhook/setup-webhook.mjs"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "file:vendor/pikit-pi-extension-shim-0.0.0-79c4fed87c.tgz",
+    "@earendil-works/pi-coding-agent": "file:vendor/pikit-pi-extension-shim-0.0.0-c8d12e0b43.tgz",
     "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-8926dea49c.tgz",
-    "@pikit/core": "file:vendor/pikit-core-0.0.0-92633a67dc.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-37da6beed7.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f3ae61acce.tgz",
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-142500a1ca.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-08bfb99eb4.tgz",
     "diff": "8.0.4",
     "isomorphic-git": "1.42.3",
     "just-bash": "3.4.2",
@@ -32,10 +32,10 @@
     "wrangler": "4.143.0"
   },
   "overrides": {
-    "@pikit/core": "file:vendor/pikit-core-0.0.0-92633a67dc.tgz",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-8926dea49c.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-37da6beed7.tgz",
-    "@pikit/pi-extension-shim": "file:vendor/pikit-pi-extension-shim-0.0.0-79c4fed87c.tgz"
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-142500a1ca.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f3ae61acce.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-08bfb99eb4.tgz",
+    "@pikit/pi-extension-shim": "file:vendor/pikit-pi-extension-shim-0.0.0-c8d12e0b43.tgz"
   },
   "cloudflare": {
     "bindings": {
@@ -45,8 +45,8 @@
       "TELEGRAM_WEBHOOK_SECRET": {
         "description": "A random string that Telegram sends with every message, so only Telegram reaches your bot: 16 to 256 letters, digits, `_` or `-`. Run `openssl rand -hex 32`, or type any long random string of those characters. You never need it again."
       },
-      "TELEGRAM_CLAIM_CODE": {
-        "description": "A passphrase you choose, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/claim <passphrase>` to your bot: your chat is the one it talks to. Whoever knows it can claim the bot too: keep it secret, and change it to revoke every claim."
+      "TELEGRAM_PASSWORD": {
+        "description": "A password you choose for your bot, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/login <password>` to your bot: that chat stays allowed. Whoever knows the password can log in too, so keep it secret; change it to log everyone out."
       },
       "OPENROUTER_API_KEY": {
         "description": "Your [OpenRouter API key](https://openrouter.ai/settings/keys): the model your agent runs on. You pay OpenRouter for its tokens; a credit limit on the key caps it."

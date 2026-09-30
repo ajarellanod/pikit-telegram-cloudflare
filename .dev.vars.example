@@ -3,6 +3,6 @@
 # To run it locally (npx wrangler dev), copy this file to .dev.vars, which Git ignores, and fill it in.
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET=
-TELEGRAM_CLAIM_CODE=
+TELEGRAM_PASSWORD=
 OPENROUTER_API_KEY=
 BRAVE_API_KEY=

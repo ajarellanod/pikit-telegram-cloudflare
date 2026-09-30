@@ -4,7 +4,7 @@ import { defineAgent } from "@pikit/contracts";
  * Your agent. Pi runs the loop; this file says who the agent is. It names the installed tools it may
  * use (`tool-*` components); installing a tool gives it to no agent that does not name it.
  * Change the model, the prompt and the tools here. `defineAgent({ state, prepare })` changes them per
- * run (SPEC §6.2a).
+ * run.
  */
 export default defineAgent({
   name: "assistant",

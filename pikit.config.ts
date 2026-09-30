@@ -1,5 +1,5 @@
 /**
- * The composition root (SPEC §4.1) of a project on Cloudflare: two Apps (SPEC C1), and everything
+ * The composition root of a project on Cloudflare: two Apps (SPEC C1), and everything
  * that runs is listed in their `components`. Follow the imports to read it all.
  *
  * - The default export runs in each conversation's Durable Object: the channel's other half, the
@@ -40,7 +40,7 @@ import toolBash from "./src/pikit/tool-bash/index.ts";
 import toolFetch from "./src/pikit/tool-fetch/index.ts";
 import toolWebsearchBrave from "./src/pikit/tool-websearch-brave/index.ts";
 
-/** Values, not behaviour (SPEC §12), under each component's name: the object's App. */
+/** Values, not behaviour, under each component's name: the object's App. */
 export const config = {
   "router-basic": { defaultAgent: "assistant" },
 };

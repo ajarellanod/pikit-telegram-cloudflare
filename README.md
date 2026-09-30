@@ -5,7 +5,8 @@
 A Telegram bot that answers with an AI agent, running in your own Cloudflare account: a Worker that
 receives Telegram's messages, and one Durable Object per chat where the agent runs
 ([Pi](https://github.com/earendil-works/pi) on an [OpenRouter](https://openrouter.ai) model) with a
-workspace, a shell, web fetch and web search. Only you can talk to it, once you claim it.
+workspace, a shell, web fetch and web search. It is private: only the people who log in with the
+password you choose can talk to it.
 
 It is a [pikit](https://github.com/ajarellanod/pikit) project (`pikit new --target cloudflare --preset
 telegram-cloudflare`), so every part of it is source in this repository, yours to read and change.
@@ -20,7 +21,7 @@ Worker's secrets:
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Your bot's token. In Telegram, open [@BotFather](https://t.me/BotFather), send `/newbot`, choose a name and a username ending in `bot`, and paste the token it answers (two parts separated by `:`). |
 | `TELEGRAM_WEBHOOK_SECRET` | A random string that Telegram sends with every message, so only Telegram reaches your bot: 16 to 256 letters, digits, `_` or `-`. Run `openssl rand -hex 32`, or type any long random string of those characters. You never need it again. |
-| `TELEGRAM_CLAIM_CODE` | A passphrase you choose, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/claim <passphrase>` to your bot: your chat is the one it talks to. Whoever knows it can claim the bot too: keep it secret, and change it to revoke every claim. |
+| `TELEGRAM_PASSWORD` | A password you choose for your bot, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/login <password>` to your bot: that chat stays allowed. Whoever knows the password can log in too, so keep it secret; change it to log everyone out. |
 | `OPENROUTER_API_KEY` | Your [OpenRouter API key](https://openrouter.ai/settings/keys): the model your agent runs on. You pay OpenRouter for its tokens; a credit limit on the key caps it. |
 | `BRAVE_API_KEY` | Optional: a [Brave Search API key](https://api-dashboard.search.brave.com) for the agent's web search (the free plan works). Without one, the bot works and only web search fails; if the form wants a value, type `none`. |
 
@@ -28,15 +29,30 @@ The button then copies this repository into your GitHub, creates the Worker (`pi
 may rename on that page) and its Durable Objects, and builds and deploys it with Workers Builds. It
 deploys again on every push to your copy.
 
+## Your bot's password
+
+Your bot talks only to the chats that logged in with its password. How it works:
+
+1. **You choose the password** in the setup form (`TELEGRAM_PASSWORD`, 8 characters or more).
+2. **You deploy.**
+3. **You send `/login <your password>` to your bot** in Telegram.
+4. **That chat stays allowed**, across restarts and deploys: you log in once.
+5. **Whoever knows the password can log in too**, from their own chat. Share it only with people you
+   want talking to your agent: they use its tools and spend your model's tokens.
+6. **Change the password to log everyone out** (in the Cloudflare dashboard: Workers & Pages → your
+   Worker → Settings → Variables and Secrets → `TELEGRAM_PASSWORD`). Every chat, yours too, then
+   sends `/login` with the new one. Pick one you have not used before: going back to an old password
+   lets back in the chats that logged in with it.
+
 ## After deploying
 
 1. **Wait for the first build** (a few minutes). Its deploy step ends with
    `✓ Telegram telegram: webhook https://pikit-telegram-bot.<your-subdomain>.workers.dev/telegram`: Telegram
    now sends your bot's messages to your Worker.
 2. **Open your bot in Telegram** (the `t.me/…` link @BotFather gave you) and send it anything. It
-   answers that it is private, with your Telegram user id.
-3. **Send `/claim <your claim code>`.** It answers "✓ This chat can talk to the agent now." Delete
-   that message: it holds the claim code.
+   answers that it is private, and how to log in.
+3. **Send `/login <your password>`.** It answers "✓ You're logged in: this chat can talk to the agent
+   now." Delete that message: it contains the password.
 4. **Talk to it.** `/new` starts a new conversation; `/help` says what it does.
 5. **Optionally, make it yours with pikit.** The repository the button made is a normal pikit
    project. Clone it, [install pikit](https://github.com/ajarellanod/pikit/tree/main/installer), and:
@@ -83,17 +99,17 @@ Cloudflare dashboard (Workers & Pages → your Worker → Logs).
 
 ## Security
 
-- **Who can talk to the bot.** Nobody, until you claim it. Then: the private chats that sent
-  `/claim` with the right code, and the Telegram user ids you list in `TELEGRAM_ALLOWED_USERS` (ids
+- **Who can talk to the bot.** Nobody, until you log in. Then: the private chats that sent
+  `/login` with the right password, and the Telegram user ids you list in `TELEGRAM_ALLOWED_USERS` (ids
   separated by commas; the bot tells a stranger their id). Add it in the dashboard as a **secret**
   (Settings → Variables and Secrets): the next `wrangler deploy` would remove a plain variable that
   `wrangler.jsonc` does not list. Everyone else is told the bot is private, and nothing they write reaches the agent.
   Groups, channels and other bots are ignored.
-- **The claim code** lets whoever knows it claim the bot: choose a long one, tell nobody, and delete
-  your `/claim` message. After 5 wrong codes in a row a chat waits 15 minutes. It never reaches the
-  agent or the logs. Change the `TELEGRAM_CLAIM_CODE` secret to revoke every claim made with the old
-  one (you then `/claim` again with the new one); delete it to close new claims while keeping the
-  chats that claimed.
+- **The password** lets whoever knows it log in: choose a long one, share it only with whom you
+  choose, and delete your `/login` message. After 5 wrong passwords in a row a chat waits 15 minutes.
+  It never reaches the agent or the logs. Change the `TELEGRAM_PASSWORD` secret to log everyone out
+  (then `/login` again with the new one); delete it to stop new logins while keeping the chats
+  already logged in.
 - **The webhook secret** is how the Worker knows a message comes from Telegram: a request without it
   is refused (`401`). If you change it, open `/telegram/setup` once so Telegram gets the new one.
 - **`/telegram/setup` and `/health` are public**, and harmless: setup can only point your bot at your
