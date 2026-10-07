@@ -1,0 +1,4 @@
+[test]
+# registry/ holds the source of your own components; their installed copies in src/pikit/ are the ones tested.
+# src/dashboard/, when the project has a UI, is a project of its own, with its own toolchain.
+pathIgnorePatterns = ["registry/**", "src/dashboard/**"]

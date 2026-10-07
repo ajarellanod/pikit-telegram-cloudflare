@@ -3,7 +3,7 @@ node_modules/
 .env
 .env.*
 !.env.example
-# State: sessions, conversations, model credentials, the agents' workspace.
+# State: the database (conversations, the registry), model credentials, the agents' workspace.
 .pikit/
 # wrangler's own: local secrets, the local objects' state and its build cache.
 .dev.vars*

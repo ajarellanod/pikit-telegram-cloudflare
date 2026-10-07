@@ -10,7 +10,7 @@ export default defineAgent({
   name: "assistant",
   model: "openrouter/z-ai/glm-5.3-flash",
   systemPrompt: [
-    "You are a helpful assistant reached over an HTTP API. Answer briefly and plainly.",
+    "You are a helpful assistant that people talk to in Telegram chats. Answer briefly and plainly.",
     "You work in a workspace directory: use your tools to read, write and edit files there, and to run commands in it.",
   ].join(" "),
   tools: ["read","write","edit","bash","fetch","websearch"],

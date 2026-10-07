@@ -1,0 +1,2 @@
+# The dashboard's build writes this (src/dashboard/: bun run build); every deploy builds it again.
+src/pikit/admin-api/dashboard-files.ts linguist-generated=true -diff

@@ -8,7 +8,7 @@ receives Telegram's messages, and one Durable Object per chat where the agent ru
 workspace, a shell, web fetch and web search. It is private: only the people who log in with the
 password you choose can talk to it.
 
-It is a [pikit](https://github.com/ajarellanod/pikit) project (`pikit new --target cloudflare --preset
+It is a [pikit](https://github.com/ajarellanod/pikit) project (`pikit new --target durable --preset
 telegram-cloudflare`), so every part of it is source in this repository, yours to read and change.
 
 ## Before you click
@@ -84,7 +84,7 @@ Cloudflare dashboard (Workers & Pages → your Worker → Logs).
 - **Messages.** Telegram posts each message to `POST /telegram` with the webhook secret. The Worker
   checks the secret and who wrote, and hands the message to that chat's Durable Object, which runs the
   agent and sends the answer back. A message is acknowledged once it is stored, never after the run.
-- **Where things are.** Conversations, sessions and the agent's files live in each chat's Durable
+- **Where things are.** Conversations (transcripts and state), the registry and the agent's files live in each chat's Durable
   Object (SQLite). Nothing is stored anywhere else.
 
 ## What it costs

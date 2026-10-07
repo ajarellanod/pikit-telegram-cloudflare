@@ -3,7 +3,7 @@
  * that runs is listed in their `components`. Follow the imports to read it all.
  *
  * - The default export runs in each conversation's Durable Object: the channel's other half, the
- *   router, the runtime, sessions, storage, delivery. `pikit add` lists every component here.
+ *   router, the runtime, the registry, storage, delivery. `pikit add` lists every component here.
  * - `worker` runs in the Worker, which receives every request first: the ingress half of each
  *   channel, the mailbox, secrets. The Worker checks and routes; the object owns the conversation.
  *   `pikit add` lists here a component's Worker half (`channelTelegramWebhookWorker`, configured
@@ -17,18 +17,13 @@
 
 import { defineApp } from "@pikit/core";
 import agents from "./src/extensions/agents.ts";
-// Pi's own permission-gate extension, unmodified: it blocks `rm -rf`, `sudo` and `chmod 777` in
-// `bash`. A policy, not a sandbox.
-import permissionGate from "./src/extensions/permission-gate.ts";
 import secretsCloudflare from "./src/pikit/secrets-cloudflare/index.ts";
 import platformCloudflare from "./src/pikit/platform-cloudflare/index.ts";
 import storageDo from "./src/pikit/storage-do/index.ts";
 import storageKvSql from "./src/pikit/storage-kv-sql/index.ts";
-import submissionsSql from "./src/pikit/submissions-sql/index.ts";
-import sessionsSql from "./src/pikit/sessions-sql/index.ts";
-import conversationsKv from "./src/pikit/conversations-kv/index.ts";
 import providerOpenrouter from "./src/pikit/provider-openrouter/index.ts";
-import { createRuntimePi } from "./src/pikit/runtime-pi/index.ts";
+import runtimePi from "./src/pikit/runtime-pi/index.ts";
+import conversationsKv from "./src/pikit/conversations-kv/index.ts";
 import routerBasic from "./src/pikit/router-basic/index.ts";
 import outboundDurable from "./src/pikit/outbound-durable/index.ts";
 import channelTelegramWebhook, { worker as channelTelegramWebhookWorker } from "./src/pikit/channel-telegram-webhook/index.ts";
@@ -53,11 +48,9 @@ export default defineApp({
     platformCloudflare,
     storageDo,
     storageKvSql,
-    submissionsSql,
-    sessionsSql,
-    conversationsKv,
     providerOpenrouter,
-    createRuntimePi({ extensions: [permissionGate] }),
+    runtimePi,
+    conversationsKv,
     routerBasic,
     outboundDurable,
     channelTelegramWebhook,

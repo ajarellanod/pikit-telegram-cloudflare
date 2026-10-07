@@ -15,11 +15,10 @@
     "deploy": "wrangler deploy | node src/pikit/channel-telegram-webhook/setup-webhook.mjs"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "file:vendor/pikit-pi-extension-shim-0.0.0-c8d12e0b43.tgz",
     "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f3ae61acce.tgz",
-    "@pikit/core": "file:vendor/pikit-core-0.0.0-142500a1ca.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-08bfb99eb4.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-6f257b6578.tgz",
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-757da94762.tgz",
     "diff": "8.0.4",
     "isomorphic-git": "1.42.3",
     "just-bash": "3.4.2",
@@ -32,10 +31,9 @@
     "wrangler": "4.143.0"
   },
   "overrides": {
-    "@pikit/core": "file:vendor/pikit-core-0.0.0-142500a1ca.tgz",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f3ae61acce.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-08bfb99eb4.tgz",
-    "@pikit/pi-extension-shim": "file:vendor/pikit-pi-extension-shim-0.0.0-c8d12e0b43.tgz"
+    "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-6f257b6578.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-757da94762.tgz"
   },
   "cloudflare": {
     "bindings": {
@@ -55,7 +53,7 @@
         "description": "Optional: a [Brave Search API key](https://api-dashboard.search.brave.com) for the agent's web search (the free plan works). Without one, the bot works and only web search fails; if the form wants a value, type `none`."
       },
       "CONVERSATION": {
-        "description": "One Durable Object per Telegram chat, SQLite-backed: its conversation, sessions and the agent's workspace. Nothing to set."
+        "description": "One Durable Object per Telegram chat, SQLite-backed: its conversations (pi-durable) and the agent's workspace. Nothing to set."
       }
     }
   }

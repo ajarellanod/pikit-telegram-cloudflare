@@ -11,6 +11,15 @@
   // The Deploy to Cloudflare page may change it.
   "name": "pikit-telegram-bot",
   "main": "src/pikit/deployment-cloudflare/worker.ts",
+  // The dashboard (SPEC §5), when the project has a UI (src/dashboard/, `pikit ui on`): built before
+  // every bundle, by whoever runs wrangler (`pikit up`, `pikit dev`, a `wrangler deploy` by hand,
+  // Workers Builds from Git). Its build writes src/pikit/admin-api/dashboard-files.ts, which the
+  // Worker bundles: a build that fails stops the deploy, so no Worker ships an old or empty dashboard.
+  // Without src/dashboard/ it does nothing. `pikit dev` builds it again when its source changes.
+  "build": {
+    "command": "if [ -f src/dashboard/package.json ]; then cd src/dashboard && bun install --frozen-lockfile && bun run build; fi",
+    "watch_dir": "src/dashboard/src"
+  },
   "compatibility_date": "2026-09-01",
   // Components and Pi use node:* APIs that Workers provide with it (Buffer, crypto, process.env).
   "compatibility_flags": ["nodejs_compat"],
@@ -18,7 +27,7 @@
   "durable_objects": {
     "bindings": [{ "name": "CONVERSATION", "class_name": "Conversation" }]
   },
-  // SQLite-backed: storage-do, sessions and submissions keep the conversation in the object's SQL.
+  // SQLite-backed: storage-do, the runtime (pi-durable) and submissions keep the conversation in the object's SQL.
   // A migration is forever: add new ones below, never edit or remove this one.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Conversation"] }],
   // The version /health reports: `pikit up` waits until it is the one it deployed (C8).
