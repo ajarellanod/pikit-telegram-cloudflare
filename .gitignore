@@ -10,6 +10,7 @@ node_modules/
 .wrangler/
 # A Deploy to Cloudflare template: the secrets' names go in the repository, and npm's lockfile is
 # the one Workers Builds installs with (after `pikit add` or `bun install`, run `npm install`).
+# The dashboard's bun.lock (src/dashboard/) stays: its build installs from it.
 !.dev.vars.example
-bun.lock
-bun.lockb
+/bun.lock
+/bun.lockb

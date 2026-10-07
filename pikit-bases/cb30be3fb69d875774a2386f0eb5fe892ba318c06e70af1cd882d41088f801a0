@@ -1,0 +1,68 @@
+This dashboard includes third-party source code:
+
+src/components/ui/*, src/hooks/use-mobile.ts and the theme in src/index.css
+  shadcn/ui — https://github.com/shadcn-ui/ui
+  Copyright (c) 2023 shadcn
+  Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+src/components/bui/*, the design tokens, theme and keyframes in src/index.css, src/lib/sounds.ts
+(the interaction sounds), public/theme.js (after its theme script), and the harness's layout, tabs,
+home, thread, composer menus and context pane in src/app.tsx and src/views/conversations/
+  Beautiful UI — https://github.com/slev12397/beautiful-ui
+  Copyright (c) 2026 Shane Levine
+  Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+The icons (the npm package iconoir-react)
+  iconoir — https://github.com/iconoir-icons/iconoir
+  Copyright (c) 2021 Daniel Martin
+  Licensed under the MIT License (the text above).
+
+The sound synthesis (the npm package @web-kits/audio)
+  Copyright (c) 2026 Raphael Salaja
+  Licensed under the MIT License (the text above).
+
+The smooth shadows in src/index.css (the npm package shadow-plugin)
+  Copyright (c) 2026 Florian Kiem
+  Licensed under the MIT License (the text above).
+
+The fonts Inter and JetBrains Mono (the npm packages @fontsource-variable/inter and
+@fontsource-variable/jetbrains-mono, bundled into the build)
+  Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+  Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+  Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org

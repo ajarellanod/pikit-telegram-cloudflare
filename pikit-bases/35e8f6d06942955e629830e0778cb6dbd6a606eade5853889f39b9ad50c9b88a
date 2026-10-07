@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 6 114 114" role="img" aria-label="pikit">
+  <defs>
+    <linearGradient id="brick" gradientUnits="userSpaceOnUse" x1="20" y1="18" x2="60" y2="62">
+      <stop offset="0" stop-color="#FFDF5C"/>
+      <stop offset="0.55" stop-color="#F7BE0C"/>
+      <stop offset="1" stop-color="#E9A100"/>
+    </linearGradient>
+
+    <linearGradient id="leg" gradientUnits="userSpaceOnUse" x1="40" y1="50" x2="70" y2="108">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#ECEDF1"/>
+      <stop offset="1" stop-color="#C8CBD3"/>
+    </linearGradient>
+
+    <linearGradient id="stud" x1="0" x2="1">
+      <stop offset="0" stop-color="#FFF1B3"/>
+      <stop offset="0.45" stop-color="#FFC81F"/>
+      <stop offset="1" stop-color="#D99400"/>
+    </linearGradient>
+
+    <radialGradient id="studTop" cx="0.38" cy="0.3" r="0.85">
+      <stop offset="0" stop-color="#FFFCEB"/>
+      <stop offset="1" stop-color="#FFD640"/>
+    </radialGradient>
+
+    <filter id="blurM" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+
+    <filter id="blurS" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.8"/></filter>
+
+    <clipPath id="legs">
+      <path d="M48 55L58 48V98L48 105Z"/>
+      <rect x="32" y="55" width="16" height="50"/>
+      <path d="M72 55L82 48H98V83Q98 91 106 91H112V99L102 106H92Q72 106 72 88Z"/>
+    </clipPath>
+  </defs>
+
+  <g stroke-linejoin="round">
+    <!-- floor shadow -->
+    <ellipse cx="72" cy="108" rx="44" ry="4.5" fill="#000000" opacity="0.35" filter="url(#blurM)"/>
+
+    <!-- legs -->
+    <g fill="url(#leg)" stroke="url(#leg)" stroke-width="1.6">
+      <path d="M48 55L58 48V98L48 105Z"/>
+      <path d="M72 55L82 48H98V83Q98 91 106 91H112V99L102 106H92Q72 106 72 88Z"/>
+    </g>
+    <g opacity="0.34" fill="#1A1A24" stroke="#1A1A24" stroke-width="1.6">
+      <path d="M48 55L58 48V98L48 105Z"/>
+      <path d="M72 55L82 48H98V83Q98 91 106 91H112V99L102 106H92Q72 106 72 88Z"/>
+    </g>
+    <g fill="url(#leg)" stroke="url(#leg)" stroke-width="1.6">
+      <path d="M88 90Q88 98 96 98L106 91Q98 91 98 83Z"/>
+      <path d="M96 98H102L112 91H106Z"/>
+    </g>
+    <path opacity="0.17" fill="#1A1A24" d="M88 90Q88 98 96 98L106 91Q98 91 98 83Z"/>
+    <path opacity="0.5" fill="#FFFFFF" d="M96 98H102L112 91H106Z"/>
+    <g fill="url(#leg)" stroke="url(#leg)" stroke-width="1.6">
+      <rect x="32" y="55" width="16" height="50"/>
+      <path d="M72 55H88V90Q88 98 96 98H102V106H92Q72 106 72 88Z"/>
+    </g>
+    <!-- ambient occlusion under the brick, leg highlights -->
+    <rect x="28" y="51" width="90" height="9" fill="#4A3600" opacity="0.45" filter="url(#blurM)" clip-path="url(#legs)"/>
+    <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-width="0.9" opacity="0.9">
+      <path d="M33.6 60V102.5"/>
+      <path d="M73.6 60V88Q73.6 104.4 92 104.4"/>
+    </g>
+
+    <!-- brick -->
+    <g fill="url(#brick)" stroke="url(#brick)" stroke-width="1.6">
+      <path d="M106 30L116 23V48L106 55Z"/>
+      <path d="M14 30L24 23H116L106 30Z"/>
+    </g>
+    <path opacity="0.28" fill="#7A4A00" stroke="#7A4A00" stroke-width="1.6" d="M106 30L116 23V48L106 55Z"/>
+    <path opacity="0.45" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.6" d="M14 30L24 23H116L106 30Z"/>
+    <rect x="14" y="30" width="92" height="25" fill="url(#brick)" stroke="url(#brick)" stroke-width="1.6"/>
+    <path d="M16.5 31.4H103.5" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
+    <path d="M107.4 31.6L114.6 26.5" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- studs: contact shadow, body, cap, specular -->
+    <g fill="#B07A00" opacity="0.35" filter="url(#blurS)">
+      <ellipse cx="37" cy="27.4" rx="8" ry="3"/>
+      <ellipse cx="65" cy="27.4" rx="8" ry="3"/>
+      <ellipse cx="93" cy="27.4" rx="8" ry="3"/>
+    </g>
+    <g fill="url(#stud)">
+      <path d="M30 19.5V26.5A7 3.2 0 0 0 44 26.5V19.5Z"/>
+      <path d="M58 19.5V26.5A7 3.2 0 0 0 72 26.5V19.5Z"/>
+      <path d="M86 19.5V26.5A7 3.2 0 0 0 100 26.5V19.5Z"/>
+    </g>
+    <g fill="url(#studTop)">
+      <ellipse cx="37" cy="19.5" rx="7" ry="3.2"/>
+      <ellipse cx="65" cy="19.5" rx="7" ry="3.2"/>
+      <ellipse cx="93" cy="19.5" rx="7" ry="3.2"/>
+    </g>
+    <g fill="#FFFFFF" opacity="0.9" filter="url(#blurS)">
+      <ellipse cx="34.8" cy="18.7" rx="2.4" ry="0.9"/>
+      <ellipse cx="62.8" cy="18.7" rx="2.4" ry="0.9"/>
+      <ellipse cx="90.8" cy="18.7" rx="2.4" ry="0.9"/>
+    </g>
+  </g>
+</svg>

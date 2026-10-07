@@ -16,8 +16,9 @@
   // Workers Builds from Git). Its build writes src/pikit/admin-api/dashboard-files.ts, which the
   // Worker bundles: a build that fails stops the deploy, so no Worker ships an old or empty dashboard.
   // Without src/dashboard/ it does nothing. `pikit dev` builds it again when its source changes.
+  // A template's: Workers Builds' Bun (1.2.15) cannot read the dashboard's bun.lock, so Bun 1.4.2 runs through npx.
   "build": {
-    "command": "if [ -f src/dashboard/package.json ]; then cd src/dashboard && bun install --frozen-lockfile && bun run build; fi",
+    "command": "if [ -f src/dashboard/package.json ]; then cd src/dashboard && npx -y bun@1.4.2 install --frozen-lockfile && npx -y bun@1.4.2 run build; fi",
     "watch_dir": "src/dashboard/src"
   },
   "compatibility_date": "2026-09-01",

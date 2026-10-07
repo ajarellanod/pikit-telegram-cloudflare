@@ -49,6 +49,9 @@
       "OPENROUTER_API_KEY": {
         "description": "Your [OpenRouter API key](https://openrouter.ai/settings/keys): the model your agent runs on. You pay OpenRouter for its tokens; a credit limit on the key caps it."
       },
+      "PIKIT_ADMIN_TOKEN": {
+        "description": "The key to your bot's dashboard (`/admin/` on your Worker's URL), where you read every conversation and can talk to the agent: **32 characters or more**. Run `openssl rand -hex 32`, or type any long random string. Keep it secret: whoever has it can read and write every conversation."
+      },
       "BRAVE_API_KEY": {
         "description": "Optional: a [Brave Search API key](https://api-dashboard.search.brave.com) for the agent's web search (the free plan works). Without one, the bot works and only web search fails; if the form wants a value, type `none`."
       },

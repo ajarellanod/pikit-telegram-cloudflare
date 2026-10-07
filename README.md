@@ -6,10 +6,11 @@ A Telegram bot that answers with an AI agent, running in your own Cloudflare acc
 receives Telegram's messages, and one Durable Object per chat where the agent runs
 ([Pi](https://github.com/earendil-works/pi) on an [OpenRouter](https://openrouter.ai) model) with a
 workspace, a shell, web fetch and web search. It is private: only the people who log in with the
-password you choose can talk to it.
+password you choose can talk to it. A dashboard on the same Worker (`/admin/`) shows you every
+conversation, and lets you talk to the agent yourself.
 
 It is a [pikit](https://github.com/ajarellanod/pikit) project (`pikit new --target durable --preset
-telegram-cloudflare`), so every part of it is source in this repository, yours to read and change.
+telegram-cloudflare --ui`), so every part of it is source in this repository, yours to read and change.
 
 ## Before you click
 
@@ -23,6 +24,7 @@ Worker's secrets:
 | `TELEGRAM_WEBHOOK_SECRET` | A random string that Telegram sends with every message, so only Telegram reaches your bot: 16 to 256 letters, digits, `_` or `-`. Run `openssl rand -hex 32`, or type any long random string of those characters. You never need it again. |
 | `TELEGRAM_PASSWORD` | A password you choose for your bot, **8 characters or more** (the bot does not start with a shorter one). Once deployed, send `/login <password>` to your bot: that chat stays allowed. Whoever knows the password can log in too, so keep it secret; change it to log everyone out. |
 | `OPENROUTER_API_KEY` | Your [OpenRouter API key](https://openrouter.ai/settings/keys): the model your agent runs on. You pay OpenRouter for its tokens; a credit limit on the key caps it. |
+| `PIKIT_ADMIN_TOKEN` | The key to your bot's dashboard (`/admin/` on your Worker's URL), where you read every conversation and can talk to the agent: **32 characters or more**. Run `openssl rand -hex 32`, or type any long random string. Keep it secret: whoever has it can read and write every conversation. |
 | `BRAVE_API_KEY` | Optional: a [Brave Search API key](https://api-dashboard.search.brave.com) for the agent's web search (the free plan works). Without one, the bot works and only web search fails; if the form wants a value, type `none`. |
 
 The button then copies this repository into your GitHub, creates the Worker (`pikit-telegram-bot`, which you
@@ -67,6 +69,21 @@ Your bot talks only to the chats that logged in with its password. How it works:
    `pikit upgrade`, which brings newer versions of the installed components, is planned and not
    there yet; until then `pikit remove` and `pikit add` replace a component. Change the model and the
    prompt in `src/agents/assistant/agent.ts`.
+
+## Your dashboard
+
+Open `https://pikit-telegram-bot.<your-subdomain>.workers.dev/admin/` and sign in with `PIKIT_ADMIN_TOKEN`, the
+token you typed in the setup form. There you see every conversation, newest first, with its
+transcript as it runs, and you can:
+
+- **talk to the agent** in a conversation of your own, which no Telegram chat sees;
+- **write in a Telegram chat's conversation**: the agent reads that the message is yours, and its
+  answer stays in the dashboard; the person in Telegram sees neither;
+- **stop a run**, start a conversation again (`/new`), and see what is waiting to be delivered.
+
+The page asks for the token and keeps a session cookie; the dashboard's files hold no data. Its
+source is `src/dashboard/` (a [shadcn/ui](https://ui.shadcn.com) project): every build of the Worker
+builds it again, so a change you push shows at the next deploy.
 
 **The bot does not answer?** Open `https://pikit-telegram-bot.<your-subdomain>.workers.dev/health`: it answers
 `{"ok":true,…}` when the Worker and its objects start. Then open `/telegram/setup` on the same URL
@@ -114,6 +131,9 @@ Cloudflare dashboard (Workers & Pages → your Worker → Logs).
   is refused (`401`). If you change it, open `/telegram/setup` once so Telegram gets the new one.
 - **`/telegram/setup` and `/health` are public**, and harmless: setup can only point your bot at your
   own Worker, with its own secret, and neither shows a secret.
+- **The dashboard's token** (`PIKIT_ADMIN_TOKEN`) reads and writes every conversation: keep it as
+  secret as your model's key. Without it, `/admin/` shows only its sign-in page, and every
+  `/admin/api/` request is refused (`401`). Change the secret to sign everyone out.
 - **Whoever can talk to the agent can use its tools**: fetch pages, search the web, and run commands
   in its own workspace (a shell without processes, inside the chat's Durable Object). And they spend
   your model's tokens.
@@ -134,8 +154,9 @@ reading your first message; `pikit up` deploys to the same Worker (`wrangler.jso
 |---|---|
 | `pikit.config.ts` | the composition root: the Worker's App (`worker`) and each chat's Durable Object's App (the default export) |
 | `src/agents/assistant/agent.ts` | your agent: its model, prompt and tools |
+| `src/dashboard/` | the dashboard: its source and `bun.lock`, built by `wrangler.jsonc`'s `build.command` before every bundle |
 | `src/pikit/<component>/` | the installed components, with their tests and a README each |
-| `wrangler.jsonc` | the Worker: its name, the `Conversation` Durable Object and its SQLite migration |
+| `wrangler.jsonc` | the Worker: its name, the dashboard's build (with Bun through npx, since Workers Builds' own is older), the `Conversation` Durable Object and its SQLite migration |
 | `.dev.vars.example` | the secrets the Deploy button asks for |
 | `package.json`, `package-lock.json` | the dependencies (installed with npm), the `deploy` script, and the setup page's descriptions (`cloudflare.bindings`) |
 | `pikit.json`, `pikit-bases/` | what pikit installed, from which pikit commit, and each file as installed |
