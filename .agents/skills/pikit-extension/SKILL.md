@@ -9,8 +9,8 @@ What an agent does besides its model, prompt and tools is a Pi extension (pi-dur
 `defineExtension`), provided by a component under the keyed capability `agent.extension` and run
 only by the agents that name it. Read `.agents/skills/pikit-component/SKILL.md` first: an extension
 component is a component, with the same rules (synchronous `setup`, resources in `start`, config holds
-values, tests ship with it). `https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6` below is the pikit repository (the kit) on this machine
-(https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6 online), as that skill says.
+values, tests ship with it). `https://github.com/ajarellanod/pikit/tree/3f800b00ea3748a9ba164e1fd9a9c07524dc37c8` below is the pikit repository (the kit) on this machine
+(https://github.com/ajarellanod/pikit/tree/3f800b00ea3748a9ba164e1fd9a9c07524dc37c8 online), as that skill says.
 
 **Reference:** `extension-house-rules` (a section from config, a `beforeTool` hook): `pikit add
 extension-house-rules --yes` to read it in `src/pikit/extension-house-rules/`, its README "How this
@@ -87,7 +87,7 @@ defineExtension({
   Hooks only read documents (`api.snapshot`); they keep a value per task with
   `api.memo(name, candidate, context)`. State shared across conversations (a person's memory, a
   project's settings) is not a document: it is a capability of yours (`storage.sql`, or an actor
-  per owner reached with `actor.mailbox`'s `call`, as `https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/features/memory.md` does).
+  per owner reached with `actor.mailbox`'s `call`, as `https://github.com/ajarellanod/pikit/tree/3f800b00ea3748a9ba164e1fd9a9c07524dc37c8/features/memory.md` does).
 - **Using a capability inside a section, hook or tool:** they get a Chord context, and capabilities
   take an `AppContext`. Keep the App's context from `start` without its cancellation, and put the
   call's context under it:
@@ -171,7 +171,7 @@ sections are its `system` messages' `sections` (a change per message; `null` rem
 1. **The component's own tests** (`files/src/pikit/<name>/<name>.test.ts`, copied with it): "what
    setup declares" (`provides: ["agent.extension"]`, `capabilities["agent.extension"].keys`), the
    extension's name, sections and hooks, the pure functions behind them (what the section says, what
-   the hook decides), refused config. They cannot import another component's files (P4 in `https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/SPEC.md`).
+   the hook decides), refused config. They cannot import another component's files (P4 in `https://github.com/ajarellanod/pikit/tree/3f800b00ea3748a9ba164e1fd9a9c07524dc37c8/SPEC.md`).
 2. **A real App** (in a project, a test of the project's own, `test/<name>.test.ts`, which may import
    `src/pikit/runtime-pi/index.ts`; in the pikit repository, `app.test.ts` beside `files/`): runtime-pi,
    your component, an agents component, provider-faux (`faux/scripted`) and `sqliteStorage(path)`.

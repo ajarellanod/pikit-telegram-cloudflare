@@ -15,7 +15,7 @@
  * | Route | Answer |
  * |---|---|
  * | `GET /admin/api/app` | `ApiApp`: the composition (`APP_DESCRIPTION`, no secrets) |
- * | `GET /admin/api/agents` | `ApiAgents`: the App's agents, their model and tools |
+ * | `GET /admin/api/agents` | `ApiAgents`: the App's agents (the code's, then the live ones), their model and tools, and which is the steward |
  * | `POST /admin/api/session` | the credential once → `200 ApiSession` and a session cookie (a browser's) |
  * | `DELETE /admin/api/session` | `204`: the session cookie cleared |
  * | `GET /admin/api/conversations?limit&cursor&archived` | `ApiPage<ApiConversation>`, the most recently active first: those listed, or with `archived=1` those archived |
@@ -190,9 +190,13 @@ export interface ApiEvent {
   [field: string]: unknown;
 }
 
-/** One of the App's agents (`agent.definition`), as it is defined. */
+/** One of the App's agents (`agent.definition`, or a live one of `agent.directory`), as it is defined. */
 export interface ApiAgent {
   name: string;
+  /** An agent that is data (`agent.directory`: made in the dashboard, agents-live), not the code's. */
+  live?: true;
+  /** A live agent's one line: what it is for. */
+  description?: string;
   /** `provider/modelId`. */
   model: string;
   /**
@@ -200,10 +204,12 @@ export interface ApiAgent {
    * its extensions bring, nor those a `prepare` gives for a state.
    */
   tools: string[];
+  /** Whether it is the project's steward (`steward: true` in its `defineAgent`, SPEC §6): at most one is. */
+  steward: boolean;
 }
 
 export interface ApiAgents {
-  /** By name. */
+  /** By name: the code's, then the live ones. */
   items: ApiAgent[];
 }
 
@@ -247,7 +253,7 @@ export interface ApiSendResponse {
 
 /** A new conversation of the dashboard's own, with its first message. */
 export interface ApiStartRequest {
-  /** One of the App's agents: the keys of `agent.definition` in `ApiApp.capabilities`. */
+  /** One of the App's agents (`GET /admin/api/agents`): the code's, or a live one. */
   agent: string;
   /** As `ApiSendRequest`'s. */
   text: string;

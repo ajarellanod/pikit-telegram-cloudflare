@@ -1,0 +1,55 @@
+# The project's checks on every pull request (admin-proposals, SPEC §6): what the dashboard's
+# Proposals view shows, and what Approve waits for. It runs the change the agent proposed, so it gets
+# no secret and a read-only token: `pull_request`, never `pull_request_target`.
+#
+# - Installs with the project's lockfile: npm's (`package-lock.json`, a Deploy to Cloudflare
+#   template) or Bun's (`bun.lock`).
+# - Type-checks when package.json has a `typecheck` script, then runs `bun test`.
+# - On Cloudflare (a `wrangler.jsonc`): bundles the Worker as a deploy would (`--dry-run`: nothing is
+#   uploaded, no Cloudflare account needed), the dashboard's build included.
+#
+# `pikit doctor` is not here: the pikit CLI is installed on a person's machine, not in the project.
+name: pikit checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pikit-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            bun install --frozen-lockfile
+          fi
+      - name: Typecheck
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.typecheck ? 0 : 1)"; then
+            bun run typecheck
+          else
+            echo "No typecheck script in package.json: skipped."
+          fi
+      - name: Test
+        run: bun test
+      - name: Bundle the Worker
+        if: hashFiles('wrangler.jsonc') != ''
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        # --name: wrangler.jsonc has none unless the project is a template's.
+        run: npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/bundle" --name pikit-checks

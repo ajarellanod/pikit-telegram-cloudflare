@@ -12,11 +12,11 @@
     "doctor": "pikit doctor",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "deploy": "wrangler deploy | node src/pikit/channel-telegram-webhook/setup-webhook.mjs"
+    "deploy": "node src/pikit/deployment-cloudflare/deploy.mjs src/pikit/channel-telegram-webhook/setup-webhook.mjs"
   },
   "dependencies": {
     "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-a167a42f55.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f5d75b7fdd.tgz",
     "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
     "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-8db1aa03d0.tgz",
     "diff": "8.0.4",
@@ -32,7 +32,7 @@
   },
   "overrides": {
     "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-a167a42f55.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-f5d75b7fdd.tgz",
     "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-8db1aa03d0.tgz"
   },
   "cloudflare": {
