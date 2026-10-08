@@ -94,20 +94,19 @@ Cloudflare dashboard (Workers & Pages → your Worker → Logs).
 ## Let it improve itself (optional)
 
 The agent can change itself (a tool, its prompt, a view of the dashboard) by proposing the change as
-a pull request on the repository the button made; you read the diff and its checks in the dashboard's
-**Proposals** and approve it (merged, then Workers Builds deploys it) or reject it. It is off until you
-connect it, after deploying, from the dashboard: **Settings → Self-improvement** checks each part as
-you go and says what is missing.
+a branch it pushes to the repository the button made, whose pull request is opened for it; you read
+the diff and its checks in the dashboard's **Proposals** and approve it (merged, then Workers Builds
+deploys it) or reject it. It is off until you connect GitHub, after deploying, in two clicks:
 
-1. The repository: `owner/name` of your copy (Cloudflare shows it under Workers & Pages → your
-   Worker → Settings → Build).
-2. Two [fine-grained GitHub tokens](https://github.com/settings/personal-access-tokens/new), this
-   repository only: `GITHUB_TOKEN`, the agent's (Contents and Pull requests read and write, Checks and
-   Commit statuses read), and `PIKIT_MERGE_TOKEN`, yours, for approving (Contents and Pull requests read
-   and write). Add both as **secrets** in Workers & Pages → your Worker → Settings → Variables and
-   Secrets, never in the dashboard's settings.
-3. A ruleset on GitHub that protects `main`: a pull request required, the `checks` status check
-   required, no force push. Then nothing reaches `main` but a change you approved.
+1. In the dashboard, **Settings → GitHub → Connect GitHub**. GitHub opens with a GitHub App ready to
+   create in your account (private, no webhook): click **Create GitHub App**.
+2. Install it on **Only select repositories**: the repository the button made. GitHub sends you back
+   to the dashboard, which shows it connected.
+
+No token to create or paste: the bot makes its own short-lived tokens for that repository, and the
+agent never holds one. If you change `PIKIT_ADMIN_TOKEN`, connect GitHub again (and delete the old App
+on GitHub). Optionally, a ruleset on GitHub that protects `main` (a pull request required, the
+`checks` status check required) adds a layer: then nothing reaches `main` but a change you approved.
 
 ## How it works
 

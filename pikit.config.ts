@@ -36,6 +36,8 @@ import toolFetch from "./src/pikit/tool-fetch/index.ts";
 import toolWebsearchBrave from "./src/pikit/tool-websearch-brave/index.ts";
 import extensionPikitSelf from "./src/pikit/extension-pikit-self/index.ts";
 import adminProposals from "./src/pikit/admin-proposals/index.ts";
+import proposalsGithub from "./src/pikit/proposals-github/index.ts";
+import githubApp, { worker as githubAppWorker } from "./src/pikit/github-app/index.ts";
 import adminAuthToken from "./src/pikit/admin-auth-token/index.ts";
 import adminApi, { worker as adminApiWorker } from "./src/pikit/admin-api/index.ts";
 import settingsStore, { worker as settingsStoreWorker } from "./src/pikit/settings-store/index.ts";
@@ -68,6 +70,8 @@ export default defineApp({
     toolWebsearchBrave,
     extensionPikitSelf,
     adminProposals,
+    proposalsGithub,
+    githubApp,
     adminAuthToken,
     adminApi,
     settingsStore,
@@ -85,6 +89,8 @@ export const worker = defineApp({
     platformCloudflare,
     channelTelegramWebhookWorker,
     adminProposals,
+    proposalsGithub,
+    githubAppWorker,
     adminAuthToken,
     adminApiWorker,
     settingsStoreWorker,

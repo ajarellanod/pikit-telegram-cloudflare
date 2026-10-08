@@ -1,7 +1,7 @@
 {
   "version": 1,
   "kit": {
-    "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8"
+    "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256"
   },
   "targets": [
     "durable"
@@ -13,14 +13,14 @@
     "admin-api": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
       },
       "files": {
         "src/pikit/admin-api/README.md": {
-          "hash": "sha256:49f555646ee0bd3c435523a311b66fe7fc106429e4348e721d1e1edcd5f3bf85"
+          "hash": "sha256:d64e196864a274f3e58b712ec4e8ccd54d7b3e493519b5e3b4e1f63612b00cb7"
         },
         "src/pikit/admin-api/admin-api.test.ts": {
           "hash": "sha256:96f29e33e23c5e4ff3ac9ac6570216828cc7a72d5e79fb78c7cfcdc3bf88095a"
@@ -29,10 +29,10 @@
           "hash": "sha256:d0217390866609c48287a82e3c1a4777e5a8003280923b073efde0a59d2e5dda"
         },
         "src/pikit/admin-api/assets.test.ts": {
-          "hash": "sha256:7c48b32e954fe43f5407313c8c0bfeebddf224bacaa3a357ff539dedc98d41f9"
+          "hash": "sha256:123480bdcd23f4006119727fe60b9f07b10c945324261b34aa3e0cc5a2f84f5e"
         },
         "src/pikit/admin-api/assets.ts": {
-          "hash": "sha256:a506516d495692bc248e7c1340c7ab386cdc61d6a6a589e45d5e7194beefe7aa"
+          "hash": "sha256:bc1bbec2aaef92c1c7278a88313fb811efe4ff5e700b54aa6ae687d363509e45"
         },
         "src/pikit/admin-api/backend.ts": {
           "hash": "sha256:e46cf20dbe56562bfd4412c94487870ad6ce51b79b5517ba894cc5d799172c4d"
@@ -95,7 +95,7 @@
     "admin-auth-token": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -133,76 +133,45 @@
     "admin-proposals": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
       },
       "files": {
-        ".github/workflows/pikit-checks.yml": {
-          "hash": "sha256:b66c7992c507a32942bf4c2fee56b1ad3ad34a32c0e624b75285acb2aeb307e7"
-        },
         "src/dashboard/src/settings/admin-proposals/index.tsx": {
-          "hash": "sha256:c922153b6687c4995d63ddbd9bfae955ffe724e52a69f09889da132b957f7ecb"
+          "hash": "sha256:d66c8665d32de784c943089148499944aa61744650ea3617804076c7a924f6bb"
         },
         "src/dashboard/src/views/admin-proposals/index.tsx": {
-          "hash": "sha256:62158faa7abab8fc8f46af3d386d5cfb6bed1eb7cacf7ec970ed8c34d44c9d3c"
+          "hash": "sha256:3ab0d22d8b1473ebdaf6da2b9c3644c7faa79579a6c02090d3562481e7a3838d"
         },
         "src/dashboard/src/views/admin-proposals/labels.tsx": {
-          "hash": "sha256:5ca100d28ed65395057d6c400f355551f934bf4adc0ed84f313aff91bfa8e103"
+          "hash": "sha256:70b6c753033d82756847e3e47df85818d31e480494b33942de239a32be6ea4f5"
         },
         "src/dashboard/src/views/admin-proposals/proposal.tsx": {
-          "hash": "sha256:abeca0c924d339a54ba1b71cacfddbcf0a92adc307ac3b902d6a323a9a49d997"
+          "hash": "sha256:afbc47dca0d69dc1481f71daf25933e886a68460480d62ee54f1cfa60885d938"
         },
         "src/dashboard/src/views/admin-proposals/types.ts": {
-          "hash": "sha256:f0322248b4387d7b010d180238d9d1135c97108fa4b98a4267b7235b039c3e11"
+          "hash": "sha256:2080f2c20cd0d24e051a93c11d70af906773c79b7ebd620326d5d8f82c136982"
         },
         "src/pikit/admin-proposals/README.md": {
-          "hash": "sha256:60b26dcc4923e26972d1ca6d5c43880213a32d87998d4326349255bc0f5847cd"
+          "hash": "sha256:30ca820a738cd91871bd2d1cb3beb7f107104f3a38c0deae3d1b58b1a54308ce"
         },
         "src/pikit/admin-proposals/admin-proposals.test.ts": {
-          "hash": "sha256:efa3711263f8c3cbfa87e97cc7a9fc3b80c3033f246ae37b3d75cabe83520e3f"
+          "hash": "sha256:a879ef99711d4dc2ce2e3fd8a5c2d24cec9e9cc7d8d6163b10f5dbec2cf81ebb"
         },
         "src/pikit/admin-proposals/api.ts": {
-          "hash": "sha256:f0322248b4387d7b010d180238d9d1135c97108fa4b98a4267b7235b039c3e11"
-        },
-        "src/pikit/admin-proposals/configure.test.ts": {
-          "hash": "sha256:715bf8146e509a7a34089e96db638db9d19ed8a14658bac1759e94ac84a014e3"
-        },
-        "src/pikit/admin-proposals/configure.ts": {
-          "hash": "sha256:b423ef854a1fc8c2770a2a9baf1a8188110d6f71487776ee428bd598f7cbb678"
-        },
-        "src/pikit/admin-proposals/fake-github.test-support.ts": {
-          "hash": "sha256:ee7c51bf90fd3d6c03d08a39664867d103878a841bb6a4deba394b052e6e1a42"
-        },
-        "src/pikit/admin-proposals/github.ts": {
-          "hash": "sha256:3e236abb81fe2d256b9c91366c82ed48b8dae88113ba393595de11cf8200ba80"
+          "hash": "sha256:c41be78b46b339b46cfe3fc9f25a80bc2b2196de269cc33ac3f044c7358e920e"
         },
         "src/pikit/admin-proposals/index.ts": {
-          "hash": "sha256:983797a1681b32ced8f4f54baa34210ace04bed2a74657f9764a9de583808bf2"
+          "hash": "sha256:4e545419890fd173cb4595893d2592c2cb06622e04c8a51354136e93b924c49b"
         }
       },
       "dependencies": {
-        "@pikit/contracts": "0.0.0",
-        "typebox": "1.3.27"
+        "@pikit/contracts": "0.0.0"
       },
-      "addedDependencies": [
-        "typebox"
-      ],
-      "environment": [
-        {
-          "name": "GITHUB_TOKEN",
-          "secret": true,
-          "required": false,
-          "description": "Connects self-improvement (optional: set it after deploying). A fine-grained GitHub token for the project's repository only, the agent's: Contents and Pull requests read and write (it pushes pikit/self/* branches and opens pull requests), Checks and Commit statuses read. admin-proposals reads proposals with it; it never merges."
-        },
-        {
-          "name": "PIKIT_MERGE_TOKEN",
-          "secret": true,
-          "required": false,
-          "description": "Connects self-improvement (optional: set it after deploying). Another fine-grained GitHub token for the same repository only, never the agent's: Contents and Pull requests read and write. It merges and closes the agent's pull requests when you approve or reject them in the dashboard."
-        }
-      ],
+      "addedDependencies": [],
+      "environment": [],
       "apps": {
         "worker": "default"
       }
@@ -210,7 +179,7 @@
     "channel-telegram-webhook": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -332,7 +301,7 @@
     "conversations-kv": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -363,7 +332,7 @@
     "deployment-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -430,7 +399,7 @@
     "execution-do": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0",
@@ -438,13 +407,13 @@
       },
       "files": {
         "src/pikit/execution-do/README.md": {
-          "hash": "sha256:08e01670d6b5fb27f0670f525b4a1f813d4456cadea79964431a0ae00655efcb"
+          "hash": "sha256:80615b3a08cb12857a24e3f153b7379fe2018214b9f4c1b464e78f451efa0b37"
         },
         "src/pikit/execution-do/durable-object.test-support.ts": {
           "hash": "sha256:1f7985fc503a342df9c48270e934d3d258a5d0d8e479a8d779050e39944d3b3a"
         },
         "src/pikit/execution-do/env.test-support.ts": {
-          "hash": "sha256:6d337efbce5877a0008602a274e998289fa34b2eea52db5baae0edd5c483a087"
+          "hash": "sha256:1e0285fdf2361d1929e1649e72212d7f433b6096776bfef1ae68d03a91a3435a"
         },
         "src/pikit/execution-do/env.test.ts": {
           "hash": "sha256:d620dc6b53f7c72d1923a93a5c9565e6ef853f39359f3ca40029daafbe1bd9e0"
@@ -453,19 +422,19 @@
           "hash": "sha256:5f7d433be3b220cff4875d563376ae0f11bc641d38bb6f8fff25f6008c7254b0"
         },
         "src/pikit/execution-do/execution-do.test.ts": {
-          "hash": "sha256:77899b62818660db40cd6c95d7b51a22c678cc24ee4dd3ac6757322f4ef591f0"
+          "hash": "sha256:9c888c56834cd456302045e0815e732380ab9777b93bd154e0891c0239b0d4c2"
         },
         "src/pikit/execution-do/files.ts": {
           "hash": "sha256:ebe3c547729c8f0331d2f5baeeb06433a227d185898707e3ec32bf4c3de7f9e8"
         },
         "src/pikit/execution-do/git-server.test-support.ts": {
-          "hash": "sha256:93928429b99bfa918006174fe1065e87d6f0512542a0ad3c1adde474646d0540"
+          "hash": "sha256:df64e31a7a798e6f392944b0961fd98eb6729d737473b9ac33322746fca1fa98"
         },
         "src/pikit/execution-do/git.ts": {
-          "hash": "sha256:906baea7f4e427d8ec4717546bb9f34a3392b122cd405d8f01046df166741805"
+          "hash": "sha256:9693eac4df78a99901a6809dc319377105922c117f5c018d5fd5f32dab5e9f12"
         },
         "src/pikit/execution-do/index.ts": {
-          "hash": "sha256:cf139307770d32ea9d298d69d9c7a2d0eedc3d6ae5fec44833de784fadddadca"
+          "hash": "sha256:7cde8e07c326f85ddb05bcb35980ee2facc2875e89e757eac3f98c34baf5451c"
         },
         "src/pikit/execution-do/quickjs.ts": {
           "hash": "sha256:1d9a79b83562001cd197c1429a8e1fd62bc27d7d0f0b5e19bceeb873dbb31f2c"
@@ -504,7 +473,7 @@
     "extension-pikit-self": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0",
@@ -512,19 +481,19 @@
       },
       "files": {
         "src/pikit/extension-pikit-self/README.md": {
-          "hash": "sha256:c8f3e59e665b8054b8d922f5eadf4610be1f1161cb1b642c814dea33011897df"
+          "hash": "sha256:3c56553cbb4e08c8a34333956441e9b17fee3a508892fe5fc09ba9edbaae506b"
         },
         "src/pikit/extension-pikit-self/extension-pikit-self.test.ts": {
-          "hash": "sha256:1e870cf68f32e407ebb07f68f903bf07cd6bebf12f94f419ad647378ff946e5f"
+          "hash": "sha256:4975dd63dd37e72c89f9e8652228d790b9802cee8c8984cbb42b947891fc1039"
         },
         "src/pikit/extension-pikit-self/index.ts": {
-          "hash": "sha256:7d6e9214872696230ba06513114af09563b60996a8a48fdad86099dbb7a656bb"
+          "hash": "sha256:24503f7b84157c8963dbfd4166286f2d20fd17b836b5ccab0458675e4744d7f9"
         },
         "src/pikit/extension-pikit-self/markdown.d.ts": {
           "hash": "sha256:06078d2ed3909b5d4cb839de683629f73b610a5f0aa46ce81214af2e012d1c41"
         },
         "src/pikit/extension-pikit-self/pikit-self.md": {
-          "hash": "sha256:9227746300cc442d4aa408ea4ed5f39bb7f4aa065228811c91a904f7b8c3db7f"
+          "hash": "sha256:f3f3f9c0ec35df2b630ebf283b0d452c0e41a47e65ef225d48b848abe9048c91"
         }
       },
       "dependencies": {
@@ -539,13 +508,71 @@
       ],
       "environment": []
     },
+    "github-app": {
+      "registry": "default",
+      "version": "0.0.0",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
+      "requires": {
+        "pikit": "0.0.0",
+        "contracts": "0.0.0"
+      },
+      "files": {
+        "src/dashboard/src/settings/github-app/index.tsx": {
+          "hash": "sha256:3d9e9e6e5f8884a8fa4875492e07bcef09b5a88b92c3d710250cb28981416592"
+        },
+        "src/pikit/github-app/README.md": {
+          "hash": "sha256:3fa5e8837c29b0fbab49ec279a838158ffd7e89cce5db8398f6355fe42abb2a3"
+        },
+        "src/pikit/github-app/api.ts": {
+          "hash": "sha256:050054d8593eab7f22f25b697b38be4c58546dc646fbcc0d5d61c9989155835a"
+        },
+        "src/pikit/github-app/calls.ts": {
+          "hash": "sha256:ff989a811dc9182da283e6eb2204f56075b5df934c87945706ee5f256cbbaac6"
+        },
+        "src/pikit/github-app/crypto.ts": {
+          "hash": "sha256:0bc89385906c5405057baced9a8ed930a98d55d091bf1fd09071e003b1f95f62"
+        },
+        "src/pikit/github-app/fake-github.test-support.ts": {
+          "hash": "sha256:458ab6d3e703d7c0544e3c9a8b38448ffdb6bea1def59644ea1d2921899b019e"
+        },
+        "src/pikit/github-app/github-app.test.ts": {
+          "hash": "sha256:3e2c696192b17bfe0aab462128b3073e5088d56ea1aaf20e97d5c454c41e6e77"
+        },
+        "src/pikit/github-app/index.ts": {
+          "hash": "sha256:c1c8dee99c37822722bda10f3bff1a1ed1c86d2dac9c53be0cae2c64064fbbb4"
+        },
+        "src/pikit/github-app/routes.ts": {
+          "hash": "sha256:74c7e32ed990c860a5b005745384d0921d12a1b324c7fe649c9ccbce1672d33a"
+        },
+        "src/pikit/github-app/store.ts": {
+          "hash": "sha256:4787899c86d9c0b4349919c79bf713be7df9787435be4502c9225e7895969e11"
+        },
+        "src/pikit/github-app/worker.ts": {
+          "hash": "sha256:0b6185fdd1e6663c7aeba0fc321619f1127b948fa959957dca9ca6a40cfc96b3"
+        }
+      },
+      "dependencies": {
+        "@pikit/contracts": "0.0.0",
+        "typebox": "1.3.27"
+      },
+      "devDependencies": {
+        "@pikit/pi-adapter": "0.0.0"
+      },
+      "addedDependencies": [
+        "typebox"
+      ],
+      "environment": [],
+      "apps": {
+        "worker": "worker"
+      }
+    },
     "outbound-durable": {
       "installedFor": [
         "channel-telegram-webhook"
       ],
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -597,7 +624,7 @@
     "platform-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -631,10 +658,53 @@
         "worker": "default"
       }
     },
+    "proposals-github": {
+      "registry": "default",
+      "version": "0.0.0",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
+      "requires": {
+        "pikit": "0.0.0",
+        "contracts": "0.0.0"
+      },
+      "files": {
+        ".github/workflows/pikit-checks.yml": {
+          "hash": "sha256:98d770a9e83b213dbcab9a9410fdcd85ca0735e957a41a362a5cf10192195cf3"
+        },
+        "src/pikit/proposals-github/README.md": {
+          "hash": "sha256:8008f53c7cd8fc9ae5a6a6c3989fea689bd3f04a132917db95964913448706dc"
+        },
+        "src/pikit/proposals-github/fake-github.test-support.ts": {
+          "hash": "sha256:620969811a329a4f10d0ce35ff78f3600005b6afc2db744c391de3a27bc0684b"
+        },
+        "src/pikit/proposals-github/github-access.ts": {
+          "hash": "sha256:f0e5a859f0ffde7646b2f6a96df098520de2a7bdb15d97ed097ac17a376d4893"
+        },
+        "src/pikit/proposals-github/github.ts": {
+          "hash": "sha256:153599eababff0b638757c2a894651c54608e270bb53ef167be80e152f4fdc8c"
+        },
+        "src/pikit/proposals-github/index.ts": {
+          "hash": "sha256:1adcfb175e77dc5c4d50f4c781baaf166fda0f2d2c562ca3648113cbf5cf7457"
+        },
+        "src/pikit/proposals-github/proposals-github.test.ts": {
+          "hash": "sha256:d4e23da323c8ef6946470250951440b0fe502171766f466b49269d2e404a6153"
+        }
+      },
+      "dependencies": {
+        "@pikit/contracts": "0.0.0",
+        "typebox": "1.3.27"
+      },
+      "addedDependencies": [
+        "typebox"
+      ],
+      "environment": [],
+      "apps": {
+        "worker": "default"
+      }
+    },
     "provider-openrouter": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -673,7 +743,7 @@
     "router-basic": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0"
       },
@@ -705,7 +775,7 @@
     "runtime-pi": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0",
@@ -754,7 +824,7 @@
     "secrets-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -782,7 +852,7 @@
     "settings-store": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -831,7 +901,7 @@
     "storage-do": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -859,7 +929,7 @@
     "storage-kv-sql": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -887,7 +957,7 @@
     "tool-bash": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -917,7 +987,7 @@
     "tool-edit": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -947,7 +1017,7 @@
     "tool-fetch": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -982,7 +1052,7 @@
     "tool-read": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -1012,7 +1082,7 @@
     "tool-websearch-brave": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -1060,7 +1130,7 @@
     "tool-write": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+      "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -1090,7 +1160,7 @@
   },
   "dashboard": {
     "registry": "default",
-    "commit": "3f800b00ea3748a9ba164e1fd9a9c07524dc37c8",
+    "commit": "ff9bbe2c8d5fb46fc5152f22279e0fc77af21256",
     "files": {
       "src/dashboard/.gitignore": {
         "hash": "sha256:41e1b782bdf457b98fe9fbb8cba15214d5550481f11cb9c0bdb6f4b3c4af91ba"
@@ -1126,7 +1196,7 @@
         "hash": "sha256:a4efb5e7292d410dc590bb4239d41c0d922a6ab4a43e8038e439f266d1bc06e3"
       },
       "src/dashboard/src/app.tsx": {
-        "hash": "sha256:7764d3225b4640cadb14a32a1773b20d3c88f06099fe04204cf53edac43972ee"
+        "hash": "sha256:8235faac661016b7f9886e1e0a83771db8b726e5d24a6d5bf455148532b437c6"
       },
       "src/dashboard/src/components/bui/Button.tsx": {
         "hash": "sha256:3fd0769fc3496d06e4f4331782c81dc6400832cbc15847b8860acc79cb34a574"
@@ -1198,7 +1268,7 @@
         "hash": "sha256:315921d60e9cda9bf3dac10607f27537d5aa77b3bf4b55f3ea5917be6d3955fa"
       },
       "src/dashboard/src/components/pikit/settings-dialog.tsx": {
-        "hash": "sha256:0d32d094b866beb1b07145592651cfa4de26c1242742afd06ee1e040119efd7a"
+        "hash": "sha256:3d80264e8d532ac047c91700a1f81967949394c318ed2c24c2ca37846f35c0a9"
       },
       "src/dashboard/src/components/pikit/settings.tsx": {
         "hash": "sha256:0a924558ab353b7f0625494c14f4aebaeb8faca347cc607b9844d0f3c997850b"
