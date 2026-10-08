@@ -1,6 +1,6 @@
 ---
 name: pikit-view
-description: Add a view to a pikit project's dashboard (src/dashboard/, a shadcn/ui project), with the admin API routes it reads, for the project alone or as part of a component others can `pikit add`. Use when the user wants to see or operate something of their pikit assistant in the dashboard.
+description: Add a view to a pikit project's dashboard (src/dashboard/, a shadcn/ui project), with the admin API routes it reads, for the project alone or as part of a component others can `pikit add`. Also a section of its Settings dialog, for values an operator changes live. Use when the user wants to see, operate or set something of their pikit assistant in the dashboard.
 ---
 
 # Add a view to the dashboard
@@ -123,3 +123,39 @@ it as the shadcn item `@pikit/<component>`.
 
 Done means: the routes' tests pass (401 first), the dashboard builds, the view appears only while
 its `requires` are provided, and nothing in it shows a secret.
+
+## A section of the Settings dialog
+
+When what the operator needs is to **change a value live** (a prompt, a limit, an option) rather than
+to see something, it is a setting, not a view (features/settings.md): a section of the dashboard's
+Settings dialog, with no route of your own.
+
+1. **Config or setting, never both.** A value deployed with the project stays config; one an operator
+   changes live is a setting, its default maybe from config. Never a secret.
+2. **The component declares it** in its `start`, when `settings` is installed (settings-store, which
+   comes with the dashboard), and reads it when used:
+   ```ts
+   const settings = pikit.useOptional("settings");
+   // start:
+   settings.get()?.declare("my-component", Type.Object({ tone: Type.Union([Type.Literal("brief"), Type.Literal("thorough")], { title: "Tone", description: "How long the answers are." }) }), { tone: config.tone });
+   // when used (keep your config's value when it rejects):
+   const { tone } = await settings.get()!.get<{ tone: string }>("my-component", ctx);
+   ```
+   settings-store serves it to the dashboard (`GET`/`PUT /admin/api/settings/my-component`, behind
+   `admin.auth`) and validates every change against the schema.
+3. **The section** is a folder: `src/dashboard/src/settings/<component>/index.tsx` for the project,
+   or the component's `settings/` folder (`"settings": "settings"` in `component.json`), which `pikit
+   add` installs there when the project has a UI. It default-exports `defineSettings` from
+   `@/lib/settings`, under the component's name:
+   ```tsx
+   export default defineSettings({ id: "my-component", title: "My component", icon: Tools, group: "Components", requires: ["settings"], keywords: ["tone"], component: () => <SchemaSettings component="my-component" /> });
+   ```
+   `SchemaSettings` (`@/components/pikit/settings`) renders it from the schema (switch, segmented
+   choice, select, text, prompt editor). A custom section places `SettingsHeading`, `SettingsRow` and
+   the controls itself over `useSettings("<component>")` (its `section`: schema, defaults, value; its
+   `save(value)`: the whole value; `storedOf` keeps what differs from the defaults). router-basic's
+   `settings/index.tsx` (Agent) is the reference for a custom one.
+4. **Check it** as a view: the dashboard builds, the section shows in Settings only while its
+   `requires` are provided, a change shows in the next `get` (test it in the component with a
+   `settings` double, or settings-store's conformance suite for a provider). `pikit registry validate`
+   checks `settings/index.tsx` defines the section under the component's name.

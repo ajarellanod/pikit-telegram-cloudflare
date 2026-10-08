@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-6f257b6578.tgz",
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-a167a42f55.tgz",
     "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-757da94762.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-8db1aa03d0.tgz",
     "diff": "8.0.4",
     "isomorphic-git": "1.42.3",
     "just-bash": "3.4.2",
@@ -32,8 +32,8 @@
   },
   "overrides": {
     "@pikit/core": "file:vendor/pikit-core-0.0.0-e6192d9805.tgz",
-    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-6f257b6578.tgz",
-    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-757da94762.tgz"
+    "@pikit/contracts": "file:vendor/pikit-contracts-0.0.0-a167a42f55.tgz",
+    "@pikit/pi-adapter": "file:vendor/pikit-pi-adapter-0.0.0-8db1aa03d0.tgz"
   },
   "cloudflare": {
     "bindings": {

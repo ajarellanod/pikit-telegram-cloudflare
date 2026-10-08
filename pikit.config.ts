@@ -34,8 +34,10 @@ import toolEdit from "./src/pikit/tool-edit/index.ts";
 import toolBash from "./src/pikit/tool-bash/index.ts";
 import toolFetch from "./src/pikit/tool-fetch/index.ts";
 import toolWebsearchBrave from "./src/pikit/tool-websearch-brave/index.ts";
+import extensionPikitSelf from "./src/pikit/extension-pikit-self/index.ts";
 import adminAuthToken from "./src/pikit/admin-auth-token/index.ts";
 import adminApi, { worker as adminApiWorker } from "./src/pikit/admin-api/index.ts";
+import settingsStore, { worker as settingsStoreWorker } from "./src/pikit/settings-store/index.ts";
 
 /** Values, not behaviour, under each component's name: the object's App. */
 export const config = {
@@ -63,8 +65,10 @@ export default defineApp({
     toolBash,
     toolFetch,
     toolWebsearchBrave,
+    extensionPikitSelf,
     adminAuthToken,
     adminApi,
+    settingsStore,
   ],
   config,
 });
@@ -80,6 +84,7 @@ export const worker = defineApp({
     channelTelegramWebhookWorker,
     adminAuthToken,
     adminApiWorker,
+    settingsStoreWorker,
   ],
   config: workerConfig,
 });

@@ -2,9 +2,9 @@ import { defineAgent } from "@pikit/contracts";
 
 /**
  * Your agent. Pi runs the loop; this file says who the agent is. It names the installed tools it may
- * use (`tool-*` components); installing a tool gives it to no agent that does not name it.
- * Change the model, the prompt and the tools here. `defineAgent({ state, prepare })` changes them per
- * run.
+ * use (`tool-*` components) and the agent extensions it runs with (`extension-*`); installing either
+ * gives it to no agent that does not name it. Change the model, the prompt, the tools and the
+ * extensions here. `defineAgent({ state, prepare })` changes them per run.
  */
 export default defineAgent({
   name: "assistant",
@@ -14,4 +14,5 @@ export default defineAgent({
     "You work in a workspace directory: use your tools to read, write and edit files there, and to run commands in it.",
   ].join(" "),
   tools: ["read","write","edit","bash","fetch","websearch"],
+  extensions: ["pikit-self"],
 });

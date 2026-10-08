@@ -12,8 +12,8 @@ owns. A component that follows the steps below composes, survives crashes and ev
 shared. Agent behaviour (prompt sections, hooks on requests and tool calls) is a component too, of a
 special shape: read `.agents/skills/pikit-extension/SKILL.md` for it.
 
-**Where the kit is.** `https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20` is the pikit repository (the kit) this project was made with,
-on this machine; online, https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20. Its design notes are in `features/`, its decisions (the
+**Where the kit is.** `https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6` is the pikit repository (the kit) this project was made with,
+on this machine; online, https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6. Its design notes are in `features/`, its decisions (the
 K, C and P names READMEs cite) in `SPEC.md`, its components in `registry/components/`. (`pikit new`
 writes both when it copies this skill into a project; in the pikit repository itself, they are its
 root.)
@@ -28,9 +28,9 @@ pikit registry capabilities     # every capability: what it is for, its stabilit
 Read `pikit.config.ts` (everything that runs is listed there) and `pikit.json` (what was installed,
 and the target: `server` is a long-lived process, `durable` an actor per conversation on Cloudflare).
 Installed components are in `src/pikit/<name>/`, each with a README and its tests; the project's own
-are in `src/extensions/`. If the feature has a design note (`https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20/features/<feature>.md`),
+are in `src/extensions/`. If the feature has a design note (`https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/features/<feature>.md`),
 read it first: it names the contract, what must be guaranteed and the tests that prove it
-(`https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20/features/memory.md` is a complete build guide).
+(`https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/features/memory.md` is a complete build guide).
 
 ## 1. Pick the contract
 
@@ -85,7 +85,7 @@ between two components: what one needs from another is a capability.
 list does not already control: an import, a dependency, a secret, a config block, a table or timer, a
 target, or a risk class (replay safe or unsafe, a shell, the network). Two tools of different risk are
 two components; one per model provider. Build on another's capability, never copy it; a bundle is a
-preset (`https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20/features/building-components.md`, "How big a component is").
+preset (`https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/features/building-components.md`, "How big a component is").
 
 ## 2. Copy the reference of its kind
 
@@ -101,7 +101,7 @@ preset (`https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2
 | Admin route / auth | `admin-auth-token` | `admin.auth`, a secret read at start, constant-time compare |
 | Model provider | `provider-openrouter`, `provider-openai-compatible`, `provider-faux` | a pi-ai provider as `model.provider` by its id, `modelProviders`, the key's variable first in `environment` |
 | Deployment | `deployment-docker` | `up`, `down`, `status`, `logs`; a stop deadline (K2) |
-| A feature of your own kind | `https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20/features/memory.md` | `declares`, a contract file, an actor per owner with `call` |
+| A feature of your own kind | `https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/features/memory.md` | `declares`, a contract file, an actor per owner with `call` |
 
 Installed ones are in `src/pikit/`, each with its README; the rest are in the registry the CLI uses
 (`pikit add <name> --yes` to read one in place, `pikit remove <name>` after).
@@ -245,7 +245,7 @@ Also a test named "what setup declares" that pins `app.describe().components` fo
 tests: a local `Bun.serve` stands in for any API; `sqliteStorage(path)` (`@pikit/pi-adapter/testing`)
 is a `storage.sql` on a file. A test that needs another component (runtime-pi) is the project's own
 (`test/*.test.ts`, importing `src/pikit/*`), never the component's. A `durable` component also runs in
-the workerd lane of the pikit repository (`https://github.com/ajarellanod/pikit/tree/27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20/tests/workerd`).
+the workerd lane of the pikit repository (`https://github.com/ajarellanod/pikit/tree/4424dc753908626a58a8dd85434773bd81484ab6/tests/workerd`).
 
 **The model** for a tool or an extension end to end (a project test, or a trial in `pikit dev`) is
 provider-faux's `faux/scripted` (`pikit add provider-faux --yes`, an agent on `model: "faux/scripted"`):

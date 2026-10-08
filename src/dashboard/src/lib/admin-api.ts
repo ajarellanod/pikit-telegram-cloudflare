@@ -159,8 +159,9 @@ export interface ApiConversation {
    */
   current?: boolean;
   /**
-   * Its key's title (`cleanTitle`), shared by the conversations a reset left behind: the one a model
-   * gave it after its first run, or the operator's (`/name`). Absent until then.
+   * Its title (`cleanTitle`): the one a model gave it after its first run, or the operator's (`/name`).
+   * Until it has one, its first message (cleaned the same way) once a model was asked to title it. A
+   * reset's new conversation has its own. Absent until then.
    */
   title?: string;
 }

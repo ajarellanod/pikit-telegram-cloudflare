@@ -1,7 +1,7 @@
 {
   "version": 1,
   "kit": {
-    "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20"
+    "commit": "4424dc753908626a58a8dd85434773bd81484ab6"
   },
   "targets": [
     "durable"
@@ -13,20 +13,20 @@
     "admin-api": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
       },
       "files": {
         "src/pikit/admin-api/README.md": {
-          "hash": "sha256:9c051ab2cad7751269f46514f9d16c3e283871abf1c3c44357ca0907ac6653b5"
+          "hash": "sha256:dd132134fdf69271a83f2ad10841113d70776bca85606f5bd4c4e2d58dd7572c"
         },
         "src/pikit/admin-api/admin-api.test.ts": {
-          "hash": "sha256:5f6cc6512334e2427c657402ae86528d221e9fb940de3a3657d6c67b56dccc87"
+          "hash": "sha256:acb14a8b75bbb0e5237f17bab7a9ad1b20211d19951a2c3de6d762d23d199962"
         },
         "src/pikit/admin-api/api.ts": {
-          "hash": "sha256:52008eb9f01dcbeab2f31763492f8964f7e37447d7251a304d641919508a2138"
+          "hash": "sha256:31c9727330c5f2e69314590be24562628812485a8447abf72a3c2cb0723a53d2"
         },
         "src/pikit/admin-api/assets.test.ts": {
           "hash": "sha256:7c48b32e954fe43f5407313c8c0bfeebddf224bacaa3a357ff539dedc98d41f9"
@@ -35,7 +35,7 @@
           "hash": "sha256:a506516d495692bc248e7c1340c7ab386cdc61d6a6a589e45d5e7194beefe7aa"
         },
         "src/pikit/admin-api/backend.ts": {
-          "hash": "sha256:d0d4171f54993dd2a5ba2a7fb69699291c9d3b6fd239914cc54c38248dceb4dd"
+          "hash": "sha256:d34e4f033651a504293068d5aeb9a5243d77d4b21339a7eaaa595a95128ace9d"
         },
         "src/pikit/admin-api/calls.ts": {
           "hash": "sha256:0e9d15030c8dae3e4f9480c59ac6c452bf71dfc525ba82efe2bb1573efec4730"
@@ -44,19 +44,19 @@
           "hash": "sha256:a9359ad7ef12cd337384f2ee1833ceaa6cf313e93f65e9282929d17d44913c4c"
         },
         "src/pikit/admin-api/conversation-index.test.ts": {
-          "hash": "sha256:0985f512b1faad7d6b5d92c2630c88fd8b6e80347a400804565ae097213875b0"
+          "hash": "sha256:1f1b9bf5cfcf203aab00313d7507fcd59e1f372670c0358dca31fb22de28fa50"
         },
         "src/pikit/admin-api/conversation-index.ts": {
-          "hash": "sha256:44beaba3d6e22f94b79123f66b58d56ca717661da6871c7f44a6d324851fe001"
+          "hash": "sha256:01769fd54f7c88de125a8998817a3d245afe4b7892a4f3816039c45ac5d21a2e"
         },
         "src/pikit/admin-api/dashboard-files.ts": {
           "hash": "sha256:0a8df508ed821f190e1fff848494c362c84ebcf30a073225d99eba3f0058a898"
         },
         "src/pikit/admin-api/index.ts": {
-          "hash": "sha256:0e407ff54d3b4ffb872f6b62227f82f0fb353af23373049bd115364b1b08e435"
+          "hash": "sha256:c9e413c8c051476cc0eb92b974ac35e4dc274109c7cdd83b7b77be9db02457f2"
         },
         "src/pikit/admin-api/remote.test.ts": {
-          "hash": "sha256:387c0f4b0363d698e0b519cd1c434140d1ce0116d304fe5246adc372a4a3168d"
+          "hash": "sha256:2272b37ebf8320fea5cfd992fedcad138abb00275f9964ed53240e640adb98a8"
         },
         "src/pikit/admin-api/remote.ts": {
           "hash": "sha256:f1c9b8a0ea1fd72d2882eb89534e39eac0d28f6469e1103b85a063234beb52bf"
@@ -68,7 +68,7 @@
           "hash": "sha256:629bbef9a287004402ff27e8f7da1ef6f571caecb05f288df7251801dadd2476"
         },
         "src/pikit/admin-api/titles.ts": {
-          "hash": "sha256:825210ca523297054312836b215e61e8863a8dfeef35ee3a03b1a56247835502"
+          "hash": "sha256:e13bb6d4f6492b1044c7d87ad0f72d22ab44e3e93f695d4bb4cd681c778f976e"
         },
         "src/pikit/admin-api/worker.ts": {
           "hash": "sha256:2b32b8842b6a9dce517318509b66deaa4d59bc5a4e92b6cc3b9cfa9c3ab4d72c"
@@ -95,7 +95,7 @@
     "admin-auth-token": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -133,7 +133,7 @@
     "channel-telegram-webhook": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -255,7 +255,7 @@
     "conversations-kv": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -286,14 +286,14 @@
     "deployment-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
       },
       "files": {
         "src/pikit/deployment-cloudflare/README.md": {
-          "hash": "sha256:5d60cf46922065d87a31344f2cdce9d346378830e758c4f47aa92cf103c81185"
+          "hash": "sha256:98d7d56d86ed74c0b32eb7b6e0cb9e6f48e18a56bd350d627b30c5f1d3d5e42d"
         },
         "src/pikit/deployment-cloudflare/bundle.test.ts": {
           "hash": "sha256:3f3bd6782e29c53f96117c6e186da2e7aa44f9d1da9e32ecadaa6ba1b2ea5e25"
@@ -341,7 +341,7 @@
     "execution-do": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0",
@@ -412,13 +412,51 @@
       ],
       "environment": []
     },
+    "extension-pikit-self": {
+      "registry": "default",
+      "version": "0.0.0",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
+      "requires": {
+        "pikit": "0.0.0",
+        "contracts": "0.0.0",
+        "adapter": "0.0.0"
+      },
+      "files": {
+        "src/pikit/extension-pikit-self/README.md": {
+          "hash": "sha256:af5a1b091be3c60939653e85a11e153d14b067bcdd93dc9dd71a459a7cdec8b1"
+        },
+        "src/pikit/extension-pikit-self/extension-pikit-self.test.ts": {
+          "hash": "sha256:c1aa42510158cb38fce4c05fa71f09dd8f90fc618d858c7138877d247402b691"
+        },
+        "src/pikit/extension-pikit-self/index.ts": {
+          "hash": "sha256:6757946854b1a2427e97eb71cad5c5bea4abe1c4abbfd0b7c35d179c93943ef9"
+        },
+        "src/pikit/extension-pikit-self/markdown.d.ts": {
+          "hash": "sha256:06078d2ed3909b5d4cb839de683629f73b610a5f0aa46ce81214af2e012d1c41"
+        },
+        "src/pikit/extension-pikit-self/pikit-self.md": {
+          "hash": "sha256:f9656ac2b9eaf02bb9292ae05ac41b479b25cd1cc209f1b1092925ffc00effed"
+        }
+      },
+      "dependencies": {
+        "@pikit/contracts": "0.0.0",
+        "@pikit/pi-adapter": "0.0.0"
+      },
+      "devDependencies": {
+        "typebox": "1.3.27"
+      },
+      "addedDependencies": [
+        "@pikit/pi-adapter"
+      ],
+      "environment": []
+    },
     "outbound-durable": {
       "installedFor": [
         "channel-telegram-webhook"
       ],
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -470,7 +508,7 @@
     "platform-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -507,7 +545,7 @@
     "provider-openrouter": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -546,19 +584,22 @@
     "router-basic": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0"
       },
       "files": {
+        "src/dashboard/src/settings/router-basic/index.tsx": {
+          "hash": "sha256:7934156a4c2ce5e44de1aeb799f5bca27778af5f0c6fe01f827d7d2ddf497e16"
+        },
         "src/pikit/router-basic/README.md": {
-          "hash": "sha256:f240a34ee3d46f4821ca344bb83aa2fe7d4f14bad57a872e83ec911f200b385d"
+          "hash": "sha256:be1de4a54299725a4b0a8bd374f709afda75da5dc1016d03ddfc84985f2f8b52"
         },
         "src/pikit/router-basic/index.ts": {
-          "hash": "sha256:b29c9b937285a8d78ccde38d0bd4e455f03fbb43466055ac6c385325704fbf2d"
+          "hash": "sha256:dbe25d6927c5a8abf0649e16a6d60407afaaae3b60c5a134d0f871ed30ca6988"
         },
         "src/pikit/router-basic/router-basic.test.ts": {
-          "hash": "sha256:9dcca63971529f881e93104b5167d75ddece406630d5f7bdee64b3c77dae51f5"
+          "hash": "sha256:66fe51aa7b23a67fcd02321acbac2790381bc024135057e245ed807c0c699241"
         }
       },
       "dependencies": {
@@ -575,7 +616,7 @@
     "runtime-pi": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0",
@@ -583,13 +624,19 @@
       },
       "files": {
         "src/pikit/runtime-pi/README.md": {
-          "hash": "sha256:d5e9217d1bd3814177eb7a9610d3b3e1219697c8e0e11f8897868af541deae46"
+          "hash": "sha256:96731834932d2d5098a74f78e00ee21f10725464e06f5ae2decc7a9aaf4db4fa"
         },
         "src/pikit/runtime-pi/extensions.test.ts": {
           "hash": "sha256:d2885eea56f1b7ba918c0d70960eeaff6efe72c54339749d98139deaa9ef3356"
         },
         "src/pikit/runtime-pi/index.ts": {
-          "hash": "sha256:1ea7754a6250e23a253b9e219ec57c33dd52faa6e05227bb3b608150ae00d072"
+          "hash": "sha256:2325d7a3b8f88f8e2c0e5fbf8c2b8a0402cf3c8e2f442b14ef646949331f7477"
+        },
+        "src/pikit/runtime-pi/overrides.test.ts": {
+          "hash": "sha256:3464a18a24ae7ae96b0265be06388c2b224273fc0571f72d1c7b5a8697184203"
+        },
+        "src/pikit/runtime-pi/overrides.ts": {
+          "hash": "sha256:1dc0e2cda4768acb27fa7bdd7c078a034f4822e14fc49e24095f0e8ecaa816d5"
         },
         "src/pikit/runtime-pi/resume.test.ts": {
           "hash": "sha256:f9a256533afc3b84d4b01c1ac940b7a1bbc8c9c60b5d0cb3beb26118235995da"
@@ -598,7 +645,7 @@
           "hash": "sha256:3061c524d39ce2007cdcf55467497b257eed30c0952682eab6c90e5b6ef8c977"
         },
         "src/pikit/runtime-pi/runtime-pi.test.ts": {
-          "hash": "sha256:b7c250dc09a8d9ff6833992044fac00d058a1697bdee0b75b38da07381dcdfbb"
+          "hash": "sha256:6befb0d10e46bc68fe5b3b96f208f462cbede4c16d70ff1525b1d599ab76514f"
         }
       },
       "dependencies": {
@@ -615,7 +662,7 @@
     "secrets-cloudflare": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -640,10 +687,59 @@
         "worker": "default"
       }
     },
+    "settings-store": {
+      "registry": "default",
+      "version": "0.0.0",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
+      "requires": {
+        "pikit": "0.0.0",
+        "contracts": "0.0.0"
+      },
+      "files": {
+        "src/pikit/settings-store/README.md": {
+          "hash": "sha256:24cf70f58076ab2e3abc3d3e1c1d556d3c772777820f99874d805a0617a04654"
+        },
+        "src/pikit/settings-store/calls.ts": {
+          "hash": "sha256:4e0ac84d27c9d93592c48447f1cbae2f94a920f5ae86d3324b5e98d157e18b9f"
+        },
+        "src/pikit/settings-store/index.ts": {
+          "hash": "sha256:49c763ca0db33f071d6f28f0473cf2ef6cd95f8f42a4449e943e9898ea09593e"
+        },
+        "src/pikit/settings-store/routes.ts": {
+          "hash": "sha256:c8354a586b9a1e7931e9c579ab1134d0849165b78e41e507e60d4ad506224ca5"
+        },
+        "src/pikit/settings-store/settings-store.test.ts": {
+          "hash": "sha256:5f83f3509fa16172f9d935f133ead18042df76f8ff686bc3c34f4bf8c393790b"
+        },
+        "src/pikit/settings-store/settings.ts": {
+          "hash": "sha256:0e2a0dc6a5a07b7c59b82049add4521ddfff35cd91292b5ca28cda7adbcb0228"
+        },
+        "src/pikit/settings-store/table.ts": {
+          "hash": "sha256:161780b7a764821d1d6e45bc8a486ebc53430486c95604d65d125ce2096df46c"
+        },
+        "src/pikit/settings-store/worker.ts": {
+          "hash": "sha256:371a27eb5e1d91688df22c414cb9d2070d7c8be7a07401c85097ae10a3ba8723"
+        }
+      },
+      "dependencies": {
+        "@pikit/contracts": "0.0.0",
+        "typebox": "1.3.27"
+      },
+      "devDependencies": {
+        "@pikit/pi-adapter": "0.0.0"
+      },
+      "addedDependencies": [
+        "typebox"
+      ],
+      "environment": [],
+      "apps": {
+        "worker": "worker"
+      }
+    },
     "storage-do": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -671,7 +767,7 @@
     "storage-kv-sql": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "contracts": "0.0.0"
@@ -699,7 +795,7 @@
     "tool-bash": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -729,7 +825,7 @@
     "tool-edit": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -759,7 +855,7 @@
     "tool-fetch": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -794,7 +890,7 @@
     "tool-read": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -824,7 +920,7 @@
     "tool-websearch-brave": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -872,7 +968,7 @@
     "tool-write": {
       "registry": "default",
       "version": "0.0.0",
-      "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+      "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
       "requires": {
         "pikit": "0.0.0",
         "adapter": "0.0.0"
@@ -902,7 +998,7 @@
   },
   "dashboard": {
     "registry": "default",
-    "commit": "27d4ccaa7f9240d198f0f1dc57eb2f8cf289cb20",
+    "commit": "4424dc753908626a58a8dd85434773bd81484ab6",
     "files": {
       "src/dashboard/.gitignore": {
         "hash": "sha256:41e1b782bdf457b98fe9fbb8cba15214d5550481f11cb9c0bdb6f4b3c4af91ba"
@@ -911,10 +1007,10 @@
         "hash": "sha256:cb30be3fb69d875774a2386f0eb5fe892ba318c06e70af1cd882d41088f801a0"
       },
       "src/dashboard/README.md": {
-        "hash": "sha256:baeee01700ecebe7b20cc3c4241c95a8521c5737b1eddfc835530151f7d3c819"
+        "hash": "sha256:87abc33dad1a81aa7921eec2a47e23eca76ca593cc2f59ad2ff1410a96b0516e"
       },
       "src/dashboard/bun.lock": {
-        "hash": "sha256:ebb1275fb79428ba3c5c2546cbfc137225683136fc5c301d6a64b09b582e0b3d"
+        "hash": "sha256:184b2e3d8d6c9fdc0a227555309b79c721e1dbe977de4c8435220b8b09ebe068"
       },
       "src/dashboard/components.json": {
         "hash": "sha256:c1679a57c4f4e7e09d38fc7e2f94944321af58880e1216264a51c033ac9b0251"
@@ -923,7 +1019,7 @@
         "hash": "sha256:510985b4f9881ced7baac6181b0910ed71b84ee91f5722054808252269c2c719"
       },
       "src/dashboard/package.json": {
-        "hash": "sha256:ea02067bf6eb825ad05896c7271381b4e7eb965b84564812ac4bf68aabfe254b"
+        "hash": "sha256:a9f5d547ba9936f54d772cc9ba39cffa221d357e648280606caca86aef17e98d"
       },
       "src/dashboard/public/mark-light.svg": {
         "hash": "sha256:b222cc802c337daf6d2c47c75de102e061de02ace1a58a959fc03353e3715d83"
@@ -938,7 +1034,7 @@
         "hash": "sha256:a4efb5e7292d410dc590bb4239d41c0d922a6ab4a43e8038e439f266d1bc06e3"
       },
       "src/dashboard/src/app.tsx": {
-        "hash": "sha256:b2581f1145b197528be63d39bfae08eae35b5eb41a063ae8cbe6e832efeb7af4"
+        "hash": "sha256:1d6aa20b48adf4b16b7b754b81d9de876a9077553ddad0367d656f2bf7ce1f51"
       },
       "src/dashboard/src/components/bui/Button.tsx": {
         "hash": "sha256:3fd0769fc3496d06e4f4331782c81dc6400832cbc15847b8860acc79cb34a574"
@@ -947,7 +1043,7 @@
         "hash": "sha256:9cdcca97325309d22749b5a9c27a1537fb0d89b50a01fd380ee7e6af33698bb9"
       },
       "src/dashboard/src/components/bui/CodeBlock.tsx": {
-        "hash": "sha256:423bdef6d8df0254a22010f56e68bd4192652a5a4e787a3f80319c0363239a36"
+        "hash": "sha256:4e5ddf99cacf7c400214f905597086c16bfbd9c4a16393ffae95d58d688d0b81"
       },
       "src/dashboard/src/components/bui/ContextCards.tsx": {
         "hash": "sha256:2430fc64ff65a816c4169b197f0751fb6f3587ddf5b2e79a3fd0db187f8736f4"
@@ -968,7 +1064,7 @@
         "hash": "sha256:5d2d2c116a3d50b18fe91ab0d4c1f6c5f6713640170b2594f69dbf1fc16e3cd5"
       },
       "src/dashboard/src/components/bui/PromptBar.tsx": {
-        "hash": "sha256:b4b2bc11f3db02ac8128b7a7b82790e6809bdc37ae93783c5d3cfb513d0e63f0"
+        "hash": "sha256:99243f20588cb689dd3f031ceb3ee142bb833ae934e8a16dc57d1c22c7d83f14"
       },
       "src/dashboard/src/components/bui/RecordsTable.tsx": {
         "hash": "sha256:73f18354de8b33b958a5fd0b6d860e57f4a0ac1f9bf1746173e109a82443f37e"
@@ -977,13 +1073,10 @@
         "hash": "sha256:292891ac4ec7e60f45db5f39d6e64e43fe4a876b0297e06ca716e1299cf55669"
       },
       "src/dashboard/src/components/bui/SidebarNav.tsx": {
-        "hash": "sha256:d1188d9c5bc337d31cd635ec10fd7d0edacfa0498420b451638035cde9441ca7"
+        "hash": "sha256:078120147b3dd938805765a20daf90588abe9fd3a11643670aaa2041dcfa3fa6"
       },
       "src/dashboard/src/components/bui/StatusPill.tsx": {
         "hash": "sha256:f2e137176e3fb71168acf3f4c38c94f849eed3065ed7cc5c0862ab700b9f27df"
-      },
-      "src/dashboard/src/components/bui/StreamText.tsx": {
-        "hash": "sha256:fa0e25e842e6f1b0d747364ab52d81a758edf8345c03b96ef6cdda0886a5cf64"
       },
       "src/dashboard/src/components/bui/Switch.tsx": {
         "hash": "sha256:8ae07c91c8cfc3885efb8b4f97c43073b74fa1e7d402d8f06a7e1a2b23a12970"
@@ -992,10 +1085,10 @@
         "hash": "sha256:14ca73f3fd7398b1ebaa66f6c93adc1e1ab757fdd6e56fbd94606177df0b4c90"
       },
       "src/dashboard/src/components/bui/ThinkingState.tsx": {
-        "hash": "sha256:f45da2cb5f22acb7a9bfc57e64d13fa747daca41beeef5797e02caae21d21fad"
+        "hash": "sha256:93387d2f9b525d5ea779cd33382093f1a11bc80d6800186e0a3f9e9beab5beea"
       },
       "src/dashboard/src/components/bui/ToolChips.tsx": {
-        "hash": "sha256:2da6431de0cbf7f4ece1957b300b6819a72e09492907de68ee3a1d48c28eca46"
+        "hash": "sha256:1ae2385bdc3a8a4c0d261a494fad8b0db22c6b8ff88589195c9949fb9926750c"
       },
       "src/dashboard/src/components/pikit/error-note.tsx": {
         "hash": "sha256:84defd8e7aa52de3c6aeea2f2555bb8ab9532c7e7c44322c1a7f8638efe08fd2"
@@ -1003,8 +1096,20 @@
       "src/dashboard/src/components/pikit/mark.tsx": {
         "hash": "sha256:98f11efe2b44e4ff42c5262b07a54b908c5fd7e8b19518a55fbab440410c46a1"
       },
+      "src/dashboard/src/components/pikit/markdown-engine.tsx": {
+        "hash": "sha256:59eced236d5bc8dd7c67dc049dd372b81f75b9879103778c50257c00e2e86c85"
+      },
+      "src/dashboard/src/components/pikit/markdown.tsx": {
+        "hash": "sha256:134d6824622c59d4a044cbe5cfd82e39038528e5b0fcbd71efd6b79e3c877535"
+      },
       "src/dashboard/src/components/pikit/message.tsx": {
-        "hash": "sha256:ff10002798aa3e9bc026bcf2991741c42bc3bb2c8e5238128053ae429b97a1f3"
+        "hash": "sha256:315921d60e9cda9bf3dac10607f27537d5aa77b3bf4b55f3ea5917be6d3955fa"
+      },
+      "src/dashboard/src/components/pikit/settings-dialog.tsx": {
+        "hash": "sha256:f09eb488137b621e793159645f7e2b2aaf7ca32780c45f3252e71c15cddf0111"
+      },
+      "src/dashboard/src/components/pikit/settings.tsx": {
+        "hash": "sha256:0a924558ab353b7f0625494c14f4aebaeb8faca347cc607b9844d0f3c997850b"
       },
       "src/dashboard/src/components/pikit/sign-in.tsx": {
         "hash": "sha256:f6d4e313ee6145efd923ad9af37990db1406a93528ed8d1bf5bc976e5cd5491d"
@@ -1055,28 +1160,34 @@
         "hash": "sha256:ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
       },
       "src/dashboard/src/index.css": {
-        "hash": "sha256:6632aab151978e6365b40219baa0d0ebc5c0063a93e932210d0c127d07672b10"
+        "hash": "sha256:5aafa3aaf209580123f026884718429e22a4dc7e2644f12a1191ac1db137670d"
       },
       "src/dashboard/src/lib/activity.ts": {
         "hash": "sha256:8c72f44b85e452e4bd327e55937756abb8651994722c78b576d901babfbec176"
       },
       "src/dashboard/src/lib/admin-api.ts": {
-        "hash": "sha256:52008eb9f01dcbeab2f31763492f8964f7e37447d7251a304d641919508a2138"
+        "hash": "sha256:31c9727330c5f2e69314590be24562628812485a8447abf72a3c2cb0723a53d2"
       },
       "src/dashboard/src/lib/api.ts": {
         "hash": "sha256:ec285c8ed5f097cbd1f5d9ed9472e19132af63f575988de1887bcade52b65ae5"
       },
       "src/dashboard/src/lib/chats.tsx": {
-        "hash": "sha256:0957749f2af46915fc2b0722df3c67da93cd271ae4436c4fe5c213b444617858"
+        "hash": "sha256:c328fc2fb7c42a93c93a1ec933b61c22944c9803291859fbea904167d04421f6"
       },
       "src/dashboard/src/lib/format.ts": {
         "hash": "sha256:cc5ba863d2b9b428e42aaa54fc79d3cee807fbdb8185f107e3eeff2b49112d87"
+      },
+      "src/dashboard/src/lib/messages.ts": {
+        "hash": "sha256:54531ece4a24ca6e71f72068cc562c159acb137b4e011e1f5c111173eaa6bcde"
       },
       "src/dashboard/src/lib/names.ts": {
         "hash": "sha256:cf0063dbf0c16c353c418ff90acde2eba5b1f1e913b966afce9829c2d52d0c08"
       },
       "src/dashboard/src/lib/router.tsx": {
         "hash": "sha256:049d6d9fd8a246745d302721a20058b39bccfd18bc285c5e148d16b17705cd63"
+      },
+      "src/dashboard/src/lib/settings.ts": {
+        "hash": "sha256:bf0d9978031790a07ae895dfd45b24ba5a1cb9f48b22e38bb54c5da6e5724271"
       },
       "src/dashboard/src/lib/shell.tsx": {
         "hash": "sha256:35bc8df2e5075e2592810e3ea706381b6ef5aadfe29cde1ef43e9d27f5c23039"
@@ -1106,16 +1217,19 @@
         "hash": "sha256:4087d7113c3b13cc31d791dba05b2b0a029c30da431143a3d900e84e92d31444"
       },
       "src/dashboard/src/views/conversations/conversation.tsx": {
-        "hash": "sha256:5ab4cb73a9aef5abe2e3140459135b6e727761d272ebd6feb4cfb00c473342f9"
+        "hash": "sha256:fcbed30bc14dfaaaaa1c23e6fc63dbfd81d591f1377c0f5513c887065148eb9f"
       },
       "src/dashboard/src/views/conversations/home.tsx": {
-        "hash": "sha256:0b1797e73f75bba10c28b131d236ea6b85e5006470ecce5e379762021fef2dfd"
+        "hash": "sha256:820c888a725c55301c96e43c9aed8ead8a6ddf13e65e6571710a0f5b06836435"
       },
       "src/dashboard/src/views/conversations/index.tsx": {
         "hash": "sha256:df09e651d328ccc22bac360017a49b10c6da3523d7b9ceae1c89354d64a881cf"
       },
+      "src/dashboard/src/views/conversations/live-state.ts": {
+        "hash": "sha256:8c9f8377f60904a1aaafdbe21a07433b705c4f59f6940d31f7f4753718e0db75"
+      },
       "src/dashboard/src/views/conversations/live.ts": {
-        "hash": "sha256:757497866d9ee62e77e3b538a2e6c3c04ce2bec7c627056d152d94eb033bb2ec"
+        "hash": "sha256:79c1fef091777d40e3059c56b4cf663157d9d5928d29a24bb3a4f4bc904c7399"
       },
       "src/dashboard/src/views/conversations/sources.ts": {
         "hash": "sha256:9f72677b470e461f52b2950d013a05b2388f8162790e0f8861a80686f09d1884"
@@ -1138,7 +1252,8 @@
     },
     "components": [
       "admin-auth-token",
-      "admin-api"
+      "admin-api",
+      "settings-store"
     ]
   }
 }
