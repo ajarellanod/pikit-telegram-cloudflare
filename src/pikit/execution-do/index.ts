@@ -8,12 +8,12 @@
  *   (`files.ts`). They survive evictions and deploys, as the object's storage does.
  * - **The shell** is just-bash, a bash interpreter in TypeScript, with `git` (isomorphic-git, fenced),
  *   `node` (QuickJS in WebAssembly) and `curl` as host commands (`shell.ts`). There are no processes.
- * - **Only `git` changes files inside `.git`**, and it pushes only to the connected repository
- *   (`github`: github-app, connected from the dashboard, or github-token), on branches under
- *   `git.branchPrefix`. The repository and its short-lived token are asked of `github` at each command
- *   that needs them, so connecting after deploying needs no deploy; the token is sent for that
- *   repository alone and never reaches the shell. Not connected (or no provider installed): clones
- *   are public and read-only, and a push says to connect GitHub in the dashboard's Settings → GitHub.
+ * - **Only `git` changes files inside `.git`**, and it pushes only to where proposals go
+ *   (`proposals.remote()`: proposals-github, the project's repository once GitHub is connected from
+ *   the dashboard), on branches under that remote's `branchPrefix`. The remote and its authorization
+ *   are asked of `proposals` at each command that needs them, so connecting after deploying needs no
+ *   deploy; the credential is sent to that remote alone and never reaches the shell. With nowhere to
+ *   go (no proposals provider, or not connected): clones are public and read-only, and a push says so.
  *
  * It refuses to start outside a Durable Object's App, or on an object without SQLite. It reads the
  * object from `WORKERS_HOST`, which `deployment-cloudflare` puts in the start context; it imports
@@ -24,7 +24,6 @@
  */
 
 import { type AppContext, BACKGROUND_CONTEXT, defineComponent } from "@pikit/core";
-import { GitHubNotConnectedError } from "@pikit/contracts";
 import { WORKERS_HOST } from "@pikit/contracts/cloudflare";
 import Type from "typebox";
 import { createDurableExecutionEnv } from "./env.ts";
@@ -58,13 +57,6 @@ const Config = Type.Object({
     },
     { default: {} },
   ),
-  git: Type.Object(
-    {
-      /** What a pushed branch must start with: the agent never pushes to `main`. */
-      branchPrefix: Type.String({ minLength: 1, default: "pikit/self/" }),
-    },
-    { default: {} },
-  ),
 });
 
 function isFilesStorage(storage: unknown): storage is DurableObjectFilesStorage {
@@ -81,20 +73,13 @@ export default defineComponent({
   name: NAME,
   config: Config,
   setup(pikit, config) {
-    // The connected repository and its token (github-app, github-token): the only one `git push` reaches.
-    const github = pikit.useOptional("github");
-    // A context of its own for asking `github` from a command: never start's.
+    // Where proposals go (proposals-github): the only remote `git push` reaches, and its credential.
+    const proposals = pikit.useOptional("proposals");
+    // A context of its own for asking `proposals` from a command: never start's.
     let background: AppContext | undefined;
-    const notConnected = () => new GitHubNotConnectedError("GitHub is not connected: an operator connects it in the dashboard's Settings → GitHub");
-
-    const repository = async (): Promise<string | undefined> => {
-      const access = github.get();
-      return access === undefined || background === undefined ? undefined : access.repository(background);
-    };
-    const token = async (): Promise<string> => {
-      const access = github.get();
-      if (access === undefined || background === undefined) throw notConnected();
-      return access.token(background);
+    const remote = async () => {
+      const provider = proposals.get();
+      return provider === undefined || background === undefined ? undefined : provider.remote(background);
     };
     // Everything is built now; only the object's storage arrives at `start`. Used before or after,
     // the files answer that the app is not running.
@@ -103,12 +88,7 @@ export default defineComponent({
       if (storage === undefined) throw new Error("execution-do: the workspace was used while the app is not running");
       return storage;
     });
-    const git = createGit({
-      files,
-      repository,
-      token,
-      branchPrefix: config.git.branchPrefix,
-    });
+    const git = createGit({ files, remote });
     const shell = createShell({
       fs: createShellFs(files),
       files,

@@ -23,7 +23,8 @@ import {
 import type { ActorMailbox, JsonValue, WakeupHandler, Wakeups } from "@pikit/contracts";
 import { WORKERS_HOST, type WorkersHost } from "@pikit/contracts/cloudflare";
 import { createLifecycleConformance, createManualClock } from "@pikit/core/testing";
-import { createMailboxConformance, createWakeupsConformance, withWorkersHost } from "@pikit/contracts/testing";
+import { createMailboxConformance, createWakeupsConformance } from "@pikit/contracts/testing";
+import { withWorkersHost } from "@pikit/contracts/cloudflare/testing";
 import platformCloudflare, { BACKOFF_MS, WAKEUPS_TABLE } from "./index.ts";
 import { type SimulatedObject, simulatedNamespace, simulatedObject } from "./object.test-support.ts";
 import { fakeSql } from "./sql.test-support.ts";

@@ -75,7 +75,7 @@ export function createFetchTool(options: FetchToolOptions = {}): ToolRegistratio
       };
       if (args.body !== undefined) init.body = args.body;
       try {
-        return { content: [{ type: "text", text: clip(await request(url, init, method, maxBytes, args.raw === true)) }] };
+        return { output: [{ type: "text", text: clip(await request(url, init, method, maxBytes, args.raw === true)) }] };
       } catch (error) {
         if (timeout.aborted) throw new Error(`fetch: ${url.host} did not answer within ${timeoutMs / 1000} s`);
         if (signal?.aborted === true) throw error;

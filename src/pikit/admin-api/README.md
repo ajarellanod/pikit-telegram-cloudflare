@@ -13,7 +13,10 @@ installed; it also stands on its own, for a script or an agent that reads the se
   runtime-pi's `/compact`, yours) and `model.complete` (runtime-pi's: the model that titles
   conversations; without it, none is titled). A server (such as `server-bun`) serves the routes. On Cloudflare, also `actor.inbox` and `actor.mailbox`
   (platform-cloudflare).
-- **Targets:** `server` and `durable` (Cloudflare): below, how it works on each.
+- **Targets:** `server` and `durable` (Cloudflare): below, how it works on each. It never reads the
+  target: in its start, `actor.inbox`'s `scope` says whether the App is every key's actor (`"all"`, a
+  server; or no `actor.inbox`: the index is its own) or one key's (`"one"`, a Durable Object: the
+  index is the index object's).
 - **Installs to:** `src/pikit/admin-api/`. `dashboard-files.ts` there is the dashboard's build's, never
   yours (`generated`).
 - **npm dependencies:** `typebox`.

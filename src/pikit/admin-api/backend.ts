@@ -350,7 +350,7 @@ export function createLocalBackend(contracts: LocalContracts): AdminBackend {
 
     async reset(id, ctx) {
       const conversation = await actionable(id, ctx);
-      const reset = await contracts.registry().reset(conversation.key, ctx);
+      const reset = await contracts.registry().reset(conversation.key, undefined, ctx);
       if (reset === undefined) throw refusal("not_found", NOT_FOUND);
       return { key: conversation.key, previousConversationId: reset.previousConversationId, conversationId: reset.newConversationId };
     },

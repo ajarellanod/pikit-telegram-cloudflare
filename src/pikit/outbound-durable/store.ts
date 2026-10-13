@@ -9,7 +9,7 @@
  * @pikit/contracts' feed.ts).
  */
 
-import type { DeliveryReceipt, FeedPage, ObservedPage, PendingPiece, SqlDatabase, SqlRow, SqlStatements } from "@pikit/contracts";
+import type { DeliveryReceipt, FeedPage, Page, PendingPiece, SqlDatabase, SqlRow, SqlStatements } from "@pikit/contracts";
 
 /** `pending` → `sending` → `delivered` | `abandoned` (@pikit/contracts' outbound.ts). */
 export type PieceState = "pending" | "sending" | "delivered" | "abandoned";
@@ -84,7 +84,7 @@ export const PENDING_MAX_PAGE = 500;
 const LAST_ERROR_LENGTH = 200;
 
 /**
- * The schema, one step per version. `outbound_meta.schema_version` says how many have run; each runs
+ * The schema, one step per version. `outbound_durable_meta.schema_version` says how many have run; each runs
  * in its own transaction with the version it reaches. A later version is a new step: `CREATE TABLE IF
  * NOT EXISTS` alone cannot add a table or a column to a database that already exists (the outbox of a
  * deployed bot), and `PRAGMA user_version` is shared by every component of the app's one database.
@@ -95,7 +95,7 @@ const MIGRATIONS: readonly ((tx: SqlStatements) => Promise<void>)[] = [
   // and SQLite reuses the highest rowid once that row is pruned. `AUTOINCREMENT` never reuses one, so
   // a receipt's `seq` follows the order pieces settled.
   async (tx) => {
-    await tx.run(`CREATE TABLE outbound_pieces (
+    await tx.run(`CREATE TABLE outbound_durable_pieces (
       seq INTEGER PRIMARY KEY,
       key TEXT NOT NULL UNIQUE,
       channel TEXT NOT NULL,
@@ -111,8 +111,8 @@ const MIGRATIONS: readonly ((tx: SqlStatements) => Promise<void>)[] = [
       created_at INTEGER NOT NULL,
       settled_at INTEGER
     )`);
-    await tx.run("CREATE INDEX outbound_pieces_open ON outbound_pieces (state, conversation_key, seq)");
-    await tx.run(`CREATE TABLE outbound_receipts (
+    await tx.run("CREATE INDEX outbound_durable_pieces_open ON outbound_durable_pieces (state, conversation_key, seq)");
+    await tx.run(`CREATE TABLE outbound_durable_receipts (
       seq INTEGER PRIMARY KEY AUTOINCREMENT,
       message_key TEXT NOT NULL,
       piece_index INTEGER NOT NULL,
@@ -135,9 +135,9 @@ type Settlement = { kind: "delivered"; platformMessageId: string } | { kind: "ab
 
 export function createStore(db: SqlDatabase) {
   const meta = async (sql: SqlStatements, name: string): Promise<number | undefined> =>
-    (await sql.query<{ value: number }>("SELECT value FROM outbound_meta WHERE name = ?", [name]))[0]?.value;
+    (await sql.query<{ value: number }>("SELECT value FROM outbound_durable_meta WHERE name = ?", [name]))[0]?.value;
   const setMeta = (sql: SqlStatements, name: string, value: number) =>
-    sql.run("INSERT INTO outbound_meta (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = excluded.value", [name, value]);
+    sql.run("INSERT INTO outbound_durable_meta (name, value) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET value = excluded.value", [name, value]);
 
   /** Marks `piece` settled, if it still is where `from` says, and records its receipt with it. */
   const settle = (piece: Piece, from: readonly PieceState[], attempts: number, settlement: Settlement, now: number): Promise<boolean> =>
@@ -146,18 +146,18 @@ export function createStore(db: SqlDatabase) {
       const changed =
         settlement.kind === "delivered"
           ? await tx.run(
-              `UPDATE outbound_pieces SET state = 'delivered', platform_message_id = ?, last_error = NULL, settled_at = ? WHERE key = ? AND state IN (${states})`,
+              `UPDATE outbound_durable_pieces SET state = 'delivered', platform_message_id = ?, last_error = NULL, settled_at = ? WHERE key = ? AND state IN (${states})`,
               [settlement.platformMessageId, now, piece.key, ...from],
             )
           : await tx.run(
-              `UPDATE outbound_pieces SET state = 'abandoned', last_error = ?, settled_at = ? WHERE key = ? AND state IN (${states})`,
+              `UPDATE outbound_durable_pieces SET state = 'abandoned', last_error = ?, settled_at = ? WHERE key = ? AND state IN (${states})`,
               [settlement.reason, now, piece.key, ...from],
             );
       // Settled already (by a process that no longer owns it): its receipt exists, and stays the only one.
       if (changed.changes !== 1) return false;
       const { idempotencyKey, index } = splitKey(piece.key);
       await tx.run(
-        `INSERT INTO outbound_receipts (message_key, piece_index, channel, conversation_key, outcome, platform_message_id, possible_duplicate, reason, attempts, at)
+        `INSERT INTO outbound_durable_receipts (message_key, piece_index, channel, conversation_key, outcome, platform_message_id, possible_duplicate, reason, attempts, at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           idempotencyKey,
@@ -178,7 +178,7 @@ export function createStore(db: SqlDatabase) {
   return {
     /** Brings the tables to `SCHEMA_VERSION`. Refuses a database written by a newer outbox. */
     async migrate(): Promise<void> {
-      await db.run("CREATE TABLE IF NOT EXISTS outbound_meta (name TEXT PRIMARY KEY, value INTEGER NOT NULL)");
+      await db.run("CREATE TABLE IF NOT EXISTS outbound_durable_meta (name TEXT PRIMARY KEY, value INTEGER NOT NULL)");
       // The version is read inside each step's transaction, which holds the write lock: two
       // processes starting at once would otherwise both see version 0 and both run step 1.
       let done = false;
@@ -201,7 +201,7 @@ export function createStore(db: SqlDatabase) {
       await db.transaction(async (tx) => {
         for (const p of pieces) {
           await tx.run(
-            "INSERT INTO outbound_pieces (key, channel, conversation_key, text, state, next_attempt_at, created_at) VALUES (?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT (key) DO NOTHING",
+            "INSERT INTO outbound_durable_pieces (key, channel, conversation_key, text, state, next_attempt_at, created_at) VALUES (?, ?, ?, ?, 'pending', ?, ?) ON CONFLICT (key) DO NOTHING",
             [p.key, p.channel, p.conversationKey, p.text, now, now],
           );
         }
@@ -214,16 +214,16 @@ export function createStore(db: SqlDatabase) {
      */
     async recoverInterrupted(): Promise<number> {
       return (
-        await db.run("UPDATE outbound_pieces SET state = 'pending', possible_duplicate = 1, last_error = 'the process stopped while sending' WHERE state = 'sending'")
+        await db.run("UPDATE outbound_durable_pieces SET state = 'pending', possible_duplicate = 1, last_error = 'the process stopped while sending' WHERE state = 'sending'")
       ).changes;
     },
 
     /** The first open piece of every conversation: only a conversation's head may be sent. */
     async heads(): Promise<Piece[]> {
       const rows = await db.query<PieceRow>(
-        `SELECT ${COLUMNS} FROM outbound_pieces p
+        `SELECT ${COLUMNS} FROM outbound_durable_pieces p
          WHERE p.state IN ('pending', 'sending')
-           AND p.seq = (SELECT MIN(q.seq) FROM outbound_pieces q
+           AND p.seq = (SELECT MIN(q.seq) FROM outbound_durable_pieces q
                         WHERE q.conversation_key = p.conversation_key AND q.state IN ('pending', 'sending'))
          ORDER BY p.seq`,
       );
@@ -232,7 +232,7 @@ export function createStore(db: SqlDatabase) {
 
     /** Written before the platform call: if the process dies now, the next one knows it may have been sent. */
     async markSending(key: string): Promise<boolean> {
-      return (await db.run("UPDATE outbound_pieces SET state = 'sending', attempts = attempts + 1 WHERE key = ? AND state = 'pending'", [key])).changes === 1;
+      return (await db.run("UPDATE outbound_durable_pieces SET state = 'sending', attempts = attempts + 1 WHERE key = ? AND state = 'pending'", [key])).changes === 1;
     },
 
     /** The send succeeded. False when the piece was no longer being sent: nothing changed. */
@@ -243,7 +243,7 @@ export function createStore(db: SqlDatabase) {
     /** Back to `pending`, to be tried at `nextAttemptAt`. */
     async retryLater(key: string, change: { nextAttemptAt: number; failed: boolean; possibleDuplicate: boolean; error: string }): Promise<void> {
       await db.run(
-        `UPDATE outbound_pieces SET state = 'pending', next_attempt_at = ?, failures = failures + ?,
+        `UPDATE outbound_durable_pieces SET state = 'pending', next_attempt_at = ?, failures = failures + ?,
            possible_duplicate = MAX(possible_duplicate, ?), last_error = ? WHERE key = ?`,
         [change.nextAttemptAt, change.failed ? 1 : 0, change.possibleDuplicate ? 1 : 0, change.error, key],
       );
@@ -260,21 +260,21 @@ export function createStore(db: SqlDatabase) {
      * some (`gap`).
      */
     async prune(now: number, deliveredMs: number, abandonedMs: number): Promise<void> {
-      await db.run("DELETE FROM outbound_pieces WHERE state = 'delivered' AND settled_at < ?", [now - deliveredMs]);
-      await db.run("DELETE FROM outbound_pieces WHERE state = 'abandoned' AND settled_at < ?", [now - abandonedMs]);
+      await db.run("DELETE FROM outbound_durable_pieces WHERE state = 'delivered' AND settled_at < ?", [now - deliveredMs]);
+      await db.run("DELETE FROM outbound_durable_pieces WHERE state = 'abandoned' AND settled_at < ?", [now - abandonedMs]);
       const expired = "(outcome = 'delivered' AND at < ?) OR (outcome = 'abandoned' AND at < ?)";
       const bounds = [now - deliveredMs, now - abandonedMs];
       await db.transaction(async (tx) => {
-        const [row] = await tx.query<{ last: number | null }>(`SELECT MAX(seq) AS last FROM outbound_receipts WHERE ${expired}`, bounds);
+        const [row] = await tx.query<{ last: number | null }>(`SELECT MAX(seq) AS last FROM outbound_durable_receipts WHERE ${expired}`, bounds);
         if (row?.last == null) return;
-        await tx.run(`DELETE FROM outbound_receipts WHERE ${expired}`, bounds);
+        await tx.run(`DELETE FROM outbound_durable_receipts WHERE ${expired}`, bounds);
         const through = (await meta(tx, "receipts_pruned_through")) ?? 0;
         await setMeta(tx, "receipts_pruned_through", Math.max(through, row.last));
       });
     },
 
     /** `OutboundQueue.pending`: the open pieces after the cursor (a `seq`), oldest first; no text. */
-    async readPending(page: { limit?: number; cursor?: string }): Promise<ObservedPage<PendingPiece>> {
+    async readPending(page: { limit?: number; cursor?: string }): Promise<Page<PendingPiece>> {
       const limit = page.limit ?? PENDING_PAGE;
       if (!Number.isSafeInteger(limit) || limit < 1) throw new Error(`outbound-durable: a page's limit is a positive integer, not ${limit}`);
       if (page.cursor !== undefined && !/^\d+$/.test(page.cursor)) throw new Error(`outbound-durable: "${page.cursor}" is not a cursor of pending()`);
@@ -282,7 +282,7 @@ export function createStore(db: SqlDatabase) {
       // One row more than the page: whether there is a next one.
       const rows = await db.query<PendingRow>(
         `SELECT seq, key, channel, conversation_key, state, attempts, next_attempt_at, possible_duplicate, last_error, created_at
-         FROM outbound_pieces WHERE state IN ('pending', 'sending') AND seq > ? ORDER BY seq LIMIT ?`,
+         FROM outbound_durable_pieces WHERE state IN ('pending', 'sending') AND seq > ? ORDER BY seq LIMIT ?`,
         [page.cursor === undefined ? 0 : Number(page.cursor), size + 1],
       );
       const items = rows.slice(0, size);
@@ -297,7 +297,7 @@ export function createStore(db: SqlDatabase) {
       const from = after === undefined ? 0 : Number(after);
       // One snapshot: a prune between the two reads would otherwise hide a gap.
       return db.transaction(async (tx) => {
-        const rows = await tx.query<ReceiptRow>("SELECT * FROM outbound_receipts WHERE seq > ? ORDER BY seq LIMIT ?", [from, limit]);
+        const rows = await tx.query<ReceiptRow>("SELECT * FROM outbound_durable_receipts WHERE seq > ? ORDER BY seq LIMIT ?", [from, limit]);
         const prunedThrough = (await meta(tx, "receipts_pruned_through")) ?? 0;
         return {
           items: rows.map((row) => ({ cursor: String(row.seq), fact: toReceipt(row) })),

@@ -34,8 +34,8 @@ export function createGitHubAccess(pikit: Pikit): GitHubAccess {
         return await github.get().token(ctx);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (isGitHubNotConnected(error)) throw new ProposalsError("not_connected", 503, `Self-improvement is not connected: ${message}. Connect GitHub in ${CONNECT}`);
-        throw new ProposalsError("unavailable", 502, `GitHub's access failed: ${message}`);
+        if (isGitHubNotConnected(error)) throw new ProposalsError("not_connected", `Self-improvement is not connected: ${message}. Connect GitHub in ${CONNECT}`);
+        throw new ProposalsError("unavailable", `GitHub's access failed: ${message}`);
       }
     },
   };

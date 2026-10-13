@@ -61,7 +61,7 @@ export async function handleMessage(message: TelegramMessage, deps: InboxDeps, c
     const last = await deps.store.get<number>(seenKey);
     if (last !== undefined && message.message_id <= last) return "answered";
     if (command === "new") {
-      const reset = await deps.conversations.reset(key, ctx);
+      const reset = await deps.conversations.reset(key, undefined, ctx);
       await reply(bot, chatId, reset === undefined ? "This is already a new conversation." : "Started a new conversation.", ctx);
     } else if (command === "login") {
       await reply(bot, chatId, "This chat can talk to me already.", ctx);
@@ -79,8 +79,6 @@ export async function handleMessage(message: TelegramMessage, deps: InboxDeps, c
     conversationId: String(chatId),
     actor: { id: String(message.from.id) },
     text,
-    raw: message,
-    receivedAt: ctx.clock.now(),
   };
   const outcome = await admitInbound(ctx, inbound, { conversations: deps.conversations, runtime: deps.runtime, key });
   switch (outcome.kind) {

@@ -5,9 +5,9 @@ C7). Its files live in the object's own SQLite; its shell is a bash interpreter 
 with `git`, `node` and `curl`. pi-durable's own `read`, `write`, `edit` and `bash` tools work on it unchanged.
 
 - **Provides:** `execution` and `execution.shell` (one pi-durable `ExecutionEnv`, `env.ts`, whose files are the object's own namespace: `execution-do:<object id>`).
-- **Requires:** nothing. **Optional:** `github` (github-app, or github-token): the repository the
-  agent pushes to and its token. Without it, or while it is not connected, clones are public and
-  read-only.
+- **Requires:** nothing. **Optional:** `proposals` (proposals-github): where the agent pushes, under
+  which prefix, and the credential for it. Without it, or while it is not connected, clones are
+  public and read-only.
 - **Target:** `durable`. On a server, use `execution-local`.
 - **Installs to:** `src/pikit/execution-do/`.
 - **npm dependencies:** `just-bash` 3.4.2, `isomorphic-git` 1.42.3, `quickjs-emscripten-core` and
@@ -57,17 +57,19 @@ They are code, not instructions to the model:
 - **Only `git` changes files inside `.git`.** Pi's file tools, the shell and `node` get "permission
   denied" for any change there, a symlink pointing into it included. Deleting a whole repository
   (`rm -r repo`) is allowed.
-- **Pushes go only to the connected repository, on branches under `git.branchPrefix`**
-  (`pikit/self/` by default): never to `main`, and only a branch that exists (`git checkout -b`
-  first). The repository is `github`'s (`repository()`), read at each push, so connecting GitHub after
-  deploying (the dashboard's Settings → GitHub) needs no deploy; while none is connected, a push says
-  so. Those branches are the agent's own, so a push replaces what is there.
-- **The token never reaches the shell.** It is `github`'s (`token()`: github-app's short-lived
-  installation token, or github-token's secret), asked for when `git` needs it and sent only to
-  github.com, for the connected repository alone: other repositories are cloned without one (public
-  only). The shell has no process that could read one, and a push reaches only `pikit/self/*`: one
-  repository-scoped credential is enough, and a ruleset on `main` an extra layer.
-- **A failed clone leaves nothing behind**, and a 429 or 5xx from GitHub is retried twice.
+- **Pushes go only to where proposals go, on branches under its prefix**: `proposals.remote()` (its
+  URL and `branchPrefix`, `pikit/self/` by default), never to `main`, and only a branch that exists
+  (`git checkout -b` first). The remote is read at each push, so connecting GitHub after deploying
+  (the dashboard's Settings → GitHub) needs no deploy; while proposals go nowhere (no provider, or
+  not connected), a push says so. execution-do never knows which provider it is. Those branches are
+  the agent's own, so a push replaces what is there.
+- **The credential never reaches the shell.** It is the remote's `authorization()` (proposals-github:
+  `github`'s token, github-app's short-lived installation token or github-token's secret), asked for
+  when `git` needs it and sent only to that remote: other repositories are cloned without one (public
+  GitHub repositories only). The shell has no process that could read one, and a push reaches only
+  the prefix's branches: one repository-scoped credential is enough, and a ruleset on `main` an extra
+  layer.
+- **A failed clone leaves nothing behind**, and a 429 or 5xx is retried twice.
 
 ## Config
 
@@ -76,11 +78,11 @@ They are code, not instructions to the model:
   root: "/work",                        // default: the working directory and HOME
   shell: { timeLimitSeconds: 25 },      // default
   node: { interruptBudget: 10_000, heapMegabytes: 32 }, // defaults
-  git: {
-    branchPrefix: "pikit/self/",        // default: what a pushed branch starts with
-  },
 }
 ```
+
+The branch prefix is not here: it is the proposals' own (`proposals.remote().branchPrefix`, set in
+proposals-github's config), so the two can never disagree.
 
 ## On Cloudflare
 
@@ -130,7 +132,8 @@ Copied with the component, they run in your project under `bun test`, over a dou
 Object's storage (`node:sqlite`) and a fake GitHub reached through `fetch` (no network): Pi's
 `ExecutionEnv` suite with a shell, the lifecycle suite, files in chunks surviving a restart, the
 shell, `node` and its limits, `curl`, the `.git` fence, and `git` from clone to push with every fence
-(the connected repository only, its token for it alone, not connected, no provider), and what real
+(the proposals' remote only, its credential for it alone, its own prefix, nowhere to go, no
+provider, a remote that is a path), and what real
 git does with `add` and `commit`. The workspace git suite (`createWorkspaceGitConformance`, the one
 execution-local passes with the machine's git) runs the steward's steps against the fake GitHub, and
 checks that its token, a marker, appears nowhere the agent can read (variables, outputs, every file

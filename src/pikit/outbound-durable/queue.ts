@@ -17,6 +17,10 @@
  *
  * What a failure means is the transport's to say (`DeliveryError.kind`); what to do about it is
  * here: wait and retry, or give up (a permanent failure, or an age of 24 hours).
+ *
+ * - **A channel with no transport** (stopped, or removed from the project) holds its pieces until one
+ *   attaches; the age still counts. A run abandons the ones past it, and asks to run again when the
+ *   next one reaches it, so a removed channel's pieces never stay open for good.
  */
 
 import { type AppContext, type AppEvents, type Clock, type Logger } from "@pikit/core";
@@ -170,12 +174,24 @@ export function createQueue(options: QueueOptions) {
     if (stopped || signal?.aborted) return undefined;
     const now = clock.now();
     let next: number | undefined;
+    const later = (time: number) => (next = next === undefined ? time : Math.min(next, time));
     for (const head of await store.heads()) {
       if (inFlight.has(head.conversationKey)) continue;
       const transport = transports.get(head.channel);
-      if (transport === undefined) continue;
+      if (transport === undefined) {
+        // No transport to send it with: it waits for one, until its age gives it up.
+        const expires = head.createdAt + MAX_AGE_MS + 1;
+        if (expires > now) {
+          later(expires);
+          continue;
+        }
+        await abandon(head, head.attempts, "not delivered within 24 hours (no transport attached for its channel)");
+        // The piece behind it is its conversation's head now: the run looks again.
+        kick();
+        continue;
+      }
       if (head.nextAttemptAt > now) {
-        next = next === undefined ? head.nextAttemptAt : Math.min(next, head.nextAttemptAt);
+        later(head.nextAttemptAt);
         continue;
       }
       // Due, but every slot is taken: a send that ends kicks the run, which starts it then.

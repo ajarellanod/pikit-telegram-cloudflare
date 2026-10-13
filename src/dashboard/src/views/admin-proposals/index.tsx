@@ -74,7 +74,7 @@ function ProposalsPage() {
       title: (row) => row.title,
       cell: (row) => (
         <>
-          {row.number !== undefined && <span className="mr-1.5 shrink-0 font-mono text-[12px] text-ink-3">#{row.number}</span>}
+          {row.ref !== undefined && <span className="mr-1.5 shrink-0 font-mono text-[12px] text-ink-3">{row.ref}</span>}
           <Link to={pagePath(BASE, row.id)} className="records-name hover:underline">
             {row.title}
           </Link>

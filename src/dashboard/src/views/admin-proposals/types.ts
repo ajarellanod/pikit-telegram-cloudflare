@@ -31,7 +31,7 @@ export interface ProposalDeploy {
 
 export interface ProposalSummary {
   id: string;
-  number?: number;
+  ref?: string;
   title: string;
   author: string;
   branch: string;
@@ -39,7 +39,7 @@ export interface ProposalSummary {
   updatedAt: string;
   closedAt?: string;
   state: ProposalState;
-  draft: boolean;
+  draft?: boolean;
   checks?: ProposalChecks;
   url?: string;
   previewUrl?: string;
@@ -70,7 +70,7 @@ export interface ProposalDetail extends ProposalSummary {
   defaultBranch: string;
   head: string;
   mergeable: boolean | null;
-  mergeableState: string;
+  mergeDetail?: string;
   additions: number;
   deletions: number;
   changedFiles: number;

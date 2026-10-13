@@ -1,7 +1,9 @@
 /**
  * The `settings` contract over a source of stored values: the App's table (`table.ts`), or on
  * Cloudflare the settings object's, read through calls (`calls.ts`). The declarations are this App's:
- * every App of a deployment runs the same components, so each declares the same.
+ * every App of a deployment runs the same components, so each declares the same. With it, the
+ * store's own operator side (`SettingsStore`: `set` and `sections`), which its routes and calls use:
+ * never the contract's, whose components only declare and read.
  *
  * - **What `get` answers** is the defaults with each stored top-level key over them, kept only while
  *   the schema accepts it: a key a deploy made invalid (a model no provider has now, an agent removed)
@@ -10,11 +12,54 @@
  *   is valid. Logged with the operator, the component and the keys it holds, never their values.
  * - Validation is TypeBox's (`Value.Check`) on the declared JSON Schema; a refusal names where the
  *   value is wrong (`/mode`), never what it is.
+ * - **Never a secret** (the contract's two checks, `@pikit/contracts`' settings.ts): `declare` refuses
+ *   a schema whose secret-named string is free (`secretSettingProblem`) and defaults holding a
+ *   credential; `set` refuses, as `invalid_value`, a value holding one (`credentialSettingProblem`:
+ *   a known credential's shape, `/prompt`, never the value).
  */
 
 import type { AppContext, Logger } from "@pikit/core";
-import { isJsonObject, type Operator, type Settings, SettingsError, type SettingsSchema, type SettingsSection, type SettingsValue } from "@pikit/contracts";
+import {
+  credentialSettingProblem,
+  isJsonObject,
+  type Operator,
+  type Settings,
+  SettingsError,
+  type SettingsSchema,
+  type SettingsValue,
+  secretSettingProblem,
+} from "@pikit/contracts";
 import Value from "typebox/value";
+
+/** One component's settings, as `sections` lists them (the dashboard's Settings dialog). JSON. */
+export interface SettingsSection {
+  component: string;
+  schema: SettingsSchema;
+  defaults: SettingsValue;
+  /** `get`'s answer. */
+  value: SettingsValue;
+}
+
+/** A value `set` refuses: its message says where the value is wrong, never the value. */
+export class InvalidSettingsError extends Error {
+  readonly code = "invalid_value";
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidSettingsError";
+  }
+}
+
+/**
+ * settings-store's operator side, which its routes (the dashboard) and its calls use. Refusals:
+ * `SettingsError` (`unknown_component`) for a component that declared nothing, `InvalidSettingsError`
+ * (`invalid_value`) for a value its schema refuses.
+ */
+export interface SettingsStore {
+  /** Stores `value` as `component`'s whole value, `operator`'s change; answers the value `get` now gives. */
+  set(component: string, value: SettingsValue, operator: Operator, ctx: AppContext): Promise<SettingsValue>;
+  /** Every declared component's settings, by name. */
+  sections(ctx: AppContext): Promise<SettingsSection[]>;
+}
 
 /** Where stored values are: every component's value as `set` stored it. */
 export interface SettingsSource {
@@ -53,6 +98,9 @@ export function createDeclarations(): Declarations {
       if (!isJsonObject(defaults) || !Value.Check(schema as never, defaults)) {
         throw new Error(`settings-store: the defaults "${component}" declares do not fit its schema: ${problem(schema, defaults)}`);
       }
+      // A setting is never a secret (the contract): a schema may only name one, and no default holds one.
+      const secret = secretSettingProblem(schema) ?? credentialSettingProblem(defaults);
+      if (secret !== undefined) throw new Error(`settings-store: "${component}" declares settings where ${secret}`);
       declared.set(component, { schema, defaults: copy(defaults) });
     },
     get: (component) => declared.get(component),
@@ -77,8 +125,8 @@ function valueOf(component: string, { schema, defaults }: Declared, stored: Sett
 
 const unknown = (component: string) => new SettingsError("unknown_component", `"${component}" declared no settings`);
 
-/** `settings` over `declarations` and `source`. */
-export function createSettings(declarations: Declarations, source: SettingsSource): Settings {
+/** `settings` and the store's operator side over `declarations` and `source`. */
+export function createSettings(declarations: Declarations, source: SettingsSource): Settings & SettingsStore {
   const declared = (component: string): Declared => {
     const found = declarations.get(component);
     if (found === undefined) throw unknown(component);
@@ -93,17 +141,19 @@ export function createSettings(declarations: Declarations, source: SettingsSourc
       return valueOf(component, declaration, (await source.read(ctx))[component], ctx.logger) as T;
     },
 
-    async set(component, value, operator, ctx) {
+    async set(component: string, value: SettingsValue, operator: Operator, ctx: AppContext) {
       const declaration = declared(component);
-      if (!isJsonObject(value)) throw new SettingsError("invalid_value", "a component's settings are a JSON object");
+      if (!isJsonObject(value)) throw new InvalidSettingsError("a component's settings are a JSON object");
       const merged = { ...declaration.defaults, ...value };
-      if (!Value.Check(declaration.schema as never, merged)) throw new SettingsError("invalid_value", `"${component}": ${problem(declaration.schema, merged)}`);
+      if (!Value.Check(declaration.schema as never, merged)) throw new InvalidSettingsError(`"${component}": ${problem(declaration.schema, merged)}`);
+      const credential = credentialSettingProblem(value);
+      if (credential !== undefined) throw new InvalidSettingsError(`"${component}": ${credential}`);
       await source.write(component, copy(value), operator, ctx);
       ctx.logger.info("settings-store: settings changed", { component, operator: operator.id, keys: Object.keys(value).sort() });
       return copy(merged) as SettingsValue;
     },
 
-    async sections(ctx) {
+    async sections(ctx: AppContext) {
       const stored = await source.read(ctx);
       return declarations.names().map((component): SettingsSection => {
         const declaration = declared(component);

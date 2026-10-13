@@ -21,14 +21,7 @@ export interface ObjectExecution {
 export function objectExecution(storage: DurableObjectFilesStorage, options: { id: string; root?: string; timeLimitSeconds?: number }): ObjectExecution {
   const root = options.root ?? "/work";
   const files = createFiles(() => storage);
-  const git = createGit({
-    files,
-    repository: async () => undefined,
-    token: async () => {
-      throw new Error("not connected");
-    },
-    branchPrefix: "pikit/self/",
-  });
+  const git = createGit({ files, remote: async () => undefined });
   const shell = createShell({
     fs: createShellFs(files),
     files,

@@ -1,6 +1,6 @@
 # proposals-github
 
-Self-improvement on Cloudflare (SPEC §6, `features/self-improvement.md`): the agent's changes to
+Self-improvement on Cloudflare (SPEC §6, [features/self-improvement.md](https://github.com/ajarellanod/pikit/blob/main/features/self-improvement.md)): the agent's changes to
 itself as pull requests on the project's GitHub repository. The steward proposes as it does on every
 target: it pushes a branch `pikit/self/<topic>` to `remote()` (execution-do's git, with the token kept
 away from it). This component opens the branch's pull request itself, the first time it lists or
@@ -27,7 +27,7 @@ pikit add admin-proposals proposals-github github-app   # or: pikit new --target
 `github-access.ts` is the only file that reaches GitHub's access: the `github` contract, whichever
 provider connects it. The repository is `github.repository(ctx)`, read at each call; the token is
 `github.token(ctx)`, asked for every call to GitHub and never kept (the provider caches it if it
-wants). Until GitHub is connected, everything but `status` is `not_connected` (503), pointing to the
+wants). Until GitHub is connected, everything but `status` is `not_connected`, pointing to the
 dashboard's Settings → GitHub.
 
 ## Connect it
@@ -58,7 +58,9 @@ The same entry goes in `config` and in `workerConfig`.
 ## What it does
 
 - **A proposal** is a branch under `branchPrefix` of `repository` itself, its id the topic
-  (`pikit/self/<topic>`), and its pull request (`number`). A fork's branch with the same name, or a
+  (`pikit/self/<topic>`), its `ref` its pull request's number (`#42`), `draft` when the pull request
+  is one, and `mergeDetail` GitHub's mergeable state in plain words (`conflicts with main`, `behind
+  main`, `blocked by main's rules`…; absent when it merges cleanly). A fork's branch with the same name, or a
   person's pull request, is not one: not listed, `not_found` to read or act on.
 - **Opening:** a pushed branch with no pull request, nor one closed at its head, gets one into the
   default branch (at most 5 per call). A rejected or merged branch the agent
@@ -74,9 +76,9 @@ The same entry goes in `config` and in `workerConfig`.
   lists 20 closed proposals, and reads the checks of the first 20 open ones (a Worker's subrequests are
   counted). A proposal's page shows its first 100 files, each patch cut at 60,000 characters and none
   past 400,000 in all.
-- **GitHub's errors:** its rate limit is `rate_limited` (429) with `retryAfter`; a refused token is
-  `unauthorized` or `forbidden` (502), a repository the token cannot see `missing_repository` (502),
-  GitHub down or slow (15 s), or `github` failing to make a token, `unavailable` (502). Never a token.
+- **GitHub's errors:** its rate limit is `rate_limited` with `retryAfter`; a refused token is
+  `unauthorized` or `forbidden`, a repository the token cannot see `missing_repository`, GitHub down
+  or slow (15 s), or `github` failing to make a token, `unavailable`. Never a token.
 - **Preview:** best effort, a `https://….workers.dev` URL in the head's check runs (Workers Builds')
   or the pull request's comments.
 

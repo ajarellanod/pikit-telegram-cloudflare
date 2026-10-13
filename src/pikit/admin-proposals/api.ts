@@ -4,6 +4,8 @@
  * (`src/dashboard/src/views/admin-proposals/types.ts`) keeps an identical copy: change both together.
  */
 
+import type { ProposalsErrorCode } from "@pikit/contracts";
+
 export type {
   ProposalCheck,
   ProposalChecks,
@@ -49,14 +51,29 @@ export interface RejectResponse {
 /**
  * An error: `unauthorized` 401; `invalid_request` 400; `not_found` 404 (no such proposal);
  * `not_open`, `moved`, `checks_failing`, `wrong_base`, `not_mergeable` 409; `too_large` 413; and the
- * provider's failures (`ProposalsError`): `not_connected` 503 (not set up yet: the message says what
- * to do), `not_configured` 503, `rate_limited` 429 (with `retry-after`), `unauthorized`, `forbidden`,
- * `missing_repository`, `unavailable`, `refused` 502. Never a secret.
+ * provider's failures (`ProposalsError`), each with its status in `PROVIDER_STATUS`. Never a secret.
  */
 export interface ProposalError {
   error: string;
   message?: string;
 }
+
+/**
+ * The HTTP status a provider's failure (`ProposalsError`'s code) answers with: `not_connected` 503 (not
+ * set up yet: the message says what to do), `rate_limited` 429 (with `retry-after`), `not_found` 404;
+ * where proposals live refusing or failing (`unauthorized`, `forbidden`, `missing_repository`,
+ * `unavailable`, `refused`) 502, the gateway's failure, not the operator's.
+ */
+export const PROVIDER_STATUS: Record<ProposalsErrorCode, number> = {
+  not_found: 404,
+  not_connected: 503,
+  rate_limited: 429,
+  unauthorized: 502,
+  forbidden: 502,
+  missing_repository: 502,
+  unavailable: 502,
+  refused: 502,
+};
 
 /** The longest comment a rejection leaves. */
 export const MAX_COMMENT = 10_000;

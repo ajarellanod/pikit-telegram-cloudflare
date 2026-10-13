@@ -87,7 +87,7 @@ export function createBraveSearchTool(options: BraveSearchToolOptions): ToolRegi
                 return `${index + 1}. ${title}${age}\n   ${result.url ?? ""}\n   ${plain(result.description ?? "")}`.trimEnd();
               })
               .join("\n\n");
-      return { content: [{ type: "text", text: redact(text, key) }] };
+      return { output: [{ type: "text", text: redact(text, key) }] };
     },
   });
 }

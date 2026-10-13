@@ -119,7 +119,7 @@ export default defineComponent({
         return found === undefined ? undefined : ref(key, found);
       },
 
-      async reset(key, ctx, agent) {
+      async reset(key, agent, ctx) {
         const reset = await inLine(key, async (): Promise<ConversationReset | undefined> => {
           const from = running();
           const previous = await current(from, key);

@@ -16,11 +16,14 @@ import runtimePi from "./index.ts";
 import { withOverride } from "./overrides.ts";
 
 const tool = (name: string) =>
-  defineTool({ name, description: `The ${name} tool`, parameters: Type.Object({}), execute: async () => ({ content: [{ type: "text", text: name }] }) }) as unknown as AgentTool;
+  defineTool({ name, description: `The ${name} tool`, parameters: Type.Object({}), execute: async () => ({ output: [{ type: "text", text: name }] }) }) as unknown as AgentTool;
 const lookup = tool("lookup");
 const notes = tool("notes");
 
-/** `settings` in memory: what was declared, and what was stored, shared by every App of a test. */
+/**
+ * `settings` in memory: what was declared, and what was stored, shared by every App of a test; and
+ * `set`, an operator's change, validated against what was declared as settings-store's routes validate it.
+ */
 function memorySettings() {
   const stored = new Map<string, SettingsValue>();
   const declared = new Map<string, { schema: object; defaults: SettingsValue }>();
@@ -35,19 +38,15 @@ function memorySettings() {
       if (found === undefined) throw new SettingsError("unknown_component", component);
       return structuredClone({ ...found.defaults, ...stored.get(component) }) as T;
     },
-    async set(component, value) {
-      const found = declared.get(component);
-      if (found === undefined) throw new SettingsError("unknown_component", component);
-      if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new SettingsError("invalid_value", component);
-      stored.set(component, structuredClone(value));
-      return value;
-    },
-    async sections() {
-      return [];
-    },
   };
   return {
     provider,
+    async set(component: string, value: SettingsValue) {
+      const found = declared.get(component);
+      if (found === undefined) throw new SettingsError("unknown_component", component);
+      if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new Error(`settings-test: the schema refuses ${component}'s value`);
+      stored.set(component, structuredClone(value));
+    },
     schema: () => declared.get("runtime-pi")?.schema,
     reads: () => reads,
     component: () => defineComponent({ name: "settings-test", setup: (pikit) => pikit.provide("settings", provider) }),
@@ -139,7 +138,7 @@ test("an operator's override changes the next run's system prompt, model and too
   expect(models.asked.at(-1)).toMatchObject({ provider: "faux", tools: ["lookup", "notes"] });
   expect(models.asked.at(-1)?.system).toContain("Be brief.");
 
-  await settings.provider.set("runtime-pi", { assistant: { systemPrompt: "Answer in French.", model: "alt/scripted", tools: ["lookup"] } }, { id: "ops" }, first.ctx);
+  await settings.set("runtime-pi", { assistant: { systemPrompt: "Answer in French.", model: "alt/scripted", tools: ["lookup"] } });
   expect(await first.ask(conversation, "r2", "hello again")).toMatchObject({ kind: "completed", text: "answer: hello again" });
   expect(models.asked.at(-1)).toMatchObject({ provider: "alt", tools: ["lookup"] });
   expect(models.asked.at(-1)?.system).toContain("Answer in French.");
@@ -153,7 +152,7 @@ test("an operator's override changes the next run's system prompt, model and too
   expect(models.asked.at(-1)?.system).toContain("Answer in French.");
 
   // Taken back: the definition again.
-  await settings.provider.set("runtime-pi", {}, { id: "ops" }, second.ctx);
+  await settings.set("runtime-pi", {});
   await second.ask(conversation, "r4", "and now?");
   expect(models.asked.at(-1)).toMatchObject({ provider: "faux", tools: ["lookup", "notes"] });
   expect(models.asked.at(-1)?.system).toContain("Be brief.");

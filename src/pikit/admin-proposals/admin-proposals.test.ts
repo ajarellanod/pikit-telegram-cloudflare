@@ -35,7 +35,7 @@ function memoryProposals() {
     async get(id) {
       calls.push(["get", id]);
       fail();
-      if (id !== "tools/calendar") throw new ProposalsError("not_found", 404, `no proposal ${id}`);
+      if (id !== "tools/calendar") throw new ProposalsError("not_found", `no proposal ${id}`);
       return { id } as ProposalDetail;
     },
     async approve(id, request) {
@@ -170,12 +170,15 @@ test("reject passes the comment, trimmed and bounded; a refusal is 409", async (
   await app.stop();
 });
 
-test("a provider's failure is its status and code, a rate limit with retry-after", async () => {
+test("a provider's failure is its code, answered with the code's status, a rate limit with retry-after", async () => {
   const { call, app, state } = await started();
-  state.failWith = new ProposalsError("not_connected", 503, "Self-improvement is not connected: no repository is set.");
+  state.failWith = new ProposalsError("not_connected", "Self-improvement is not connected: no repository is set.");
   expect(await call("GET", "")).toMatchObject({ status: 503, body: { error: "not_connected", message: "Self-improvement is not connected: no repository is set." } });
-  state.failWith = new ProposalsError("rate_limited", 429, "try again in 30 s", 30);
+  state.failWith = new ProposalsError("rate_limited", "try again in 30 s", 30);
   const limited = await call("POST", `/${ID}/approve`, {});
   expect([limited.status, limited.headers.get("retry-after"), (limited.body as ProposalError).error]).toEqual([429, "30", "rate_limited"]);
+  state.failWith = new ProposalsError("unavailable", "GitHub did not answer well (HTTP 503): try again");
+  const down = await call("GET", `/${ID}`);
+  expect([down.status, down.headers.get("retry-after"), (down.body as ProposalError).error]).toEqual([502, null, "unavailable"]);
   await app.stop();
 });

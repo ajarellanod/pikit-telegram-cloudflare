@@ -10,11 +10,11 @@
  *   anything older than 24 hours is abandoned. An abandonment is logged as an error.
  * - A send the process died during is sent again, as a possible duplicate: the platform drops it
  *   (idempotent transports) or the reader sees a marker. At-least-once.
- * - Abandoned pieces stay in `outbound_pieces` for 30 days, with their reason; delivered ones for 7.
- * - Every piece that settles gets one receipt, in the same transaction (`outbound_receipts`), read as a
+ * - Abandoned pieces stay in `outbound_durable_pieces` for 30 days, with their reason; delivered ones for 7.
+ * - Every piece that settles gets one receipt, in the same transaction (`outbound_durable_receipts`), read as a
  *   feed through `receipts` (`Feed`, SPEC K3): what a component that must not miss a delivery reads.
  * - `pending` lists the pieces not settled yet, oldest first, without their text: what an operator sees waiting.
- * - Its tables carry a schema version (`outbound_meta`), so an existing database gains new tables.
+ * - Its tables carry a schema version (`outbound_durable_meta`), so an existing database gains new tables.
  *
  * How this differs from a channel's direct delivery: @pikit/contracts' delivery.ts, in its header.
  *

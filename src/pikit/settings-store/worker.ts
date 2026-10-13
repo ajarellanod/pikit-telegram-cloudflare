@@ -25,9 +25,10 @@ export const worker = defineComponent({
   setup(pikit) {
     const auth = pikit.useOptional("admin.auth");
     const mailbox = pikit.use("actor.mailbox");
-    pikit.provide("settings", createRemoteSettings(createDeclarations(), () => mailbox.get(), pikit.clock));
+    const { declare, get } = createRemoteSettings(createDeclarations(), () => mailbox.get(), pikit.clock);
+    pikit.provide("settings", { declare, get });
     // The routes show and set what the settings object's App declares: every object's components.
-    const admin = createRemoteAdmin(() => mailbox.get());
-    provideRoutes(pikit, { auth, settings: () => admin });
+    const store = createRemoteAdmin(() => mailbox.get());
+    provideRoutes(pikit, { auth, store: () => store });
   },
 });

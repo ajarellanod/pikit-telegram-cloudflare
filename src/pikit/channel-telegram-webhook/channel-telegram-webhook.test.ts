@@ -36,8 +36,8 @@ import {
   createMemorySubmissions,
   createMemoryWakeups,
   type RecordingSubmissions,
-  withWorkersHost,
 } from "@pikit/contracts/testing";
+import { withWorkersHost } from "@pikit/contracts/cloudflare/testing";
 import { accountsOf } from "./account.ts";
 import { registerInbox } from "./actor-inbox.ts";
 import { within } from "./bot.ts";

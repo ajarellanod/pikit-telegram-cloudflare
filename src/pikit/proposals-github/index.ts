@@ -4,8 +4,8 @@
  * `remote()`, the project's repository. This opens the pull request itself, the first time it lists
  * or reads a branch that has none (its head commit's first line the title, the rest the description);
  * approving squash-merges it through GitHub's API, rejecting comments and closes it. The deploy follows
- * the merge: Workers Builds. A proposal's id is its branch's topic (`pikit/self/<topic>`), the pull
- * request's number beside it.
+ * the merge: Workers Builds. A proposal's id is its branch's topic (`pikit/self/<topic>`), its `ref`
+ * the pull request's number (`#42`), `mergeDetail` GitHub's mergeable state in plain words.
  *
  * - **GitHub access is the `github` contract's** (`github-access.ts`): the repository and a token,
  *   whichever provider connects them (github-app, github-token). Until GitHub is connected, `list`,
@@ -18,7 +18,8 @@
  *   closed. Approve also refuses a base other than the default branch, a head that moved since the
  *   operator read it, and failing, pending or missing checks unless `override` says so.
  * - **GitHub's REST API over `fetch`** (`github.ts`). Its rate limit is `rate_limited` with a
- *   `retryAfter`; a refused token, a missing repository or GitHub down are `502`, saying which.
+ *   `retryAfter`; a refused token, a missing repository or GitHub down are `unauthorized` (or
+ *   `forbidden`), `missing_repository` and `unavailable`, saying which.
  * - **`remote`** is `https://github.com/<repository>.git`, authorized with `github`'s token by trusted
  *   code: where the steward clones from and pushes to.
  *
@@ -70,6 +71,20 @@ const CLOSED_LISTED = 20;
 /** Open proposals whose checks the list reads (two requests each: a Worker's subrequests are counted). */
 const CHECKED = 20;
 
+/** GitHub's mergeable state, for the operator in plain words; nothing to say when it merges cleanly. */
+export function mergeDetailOf(state: string | undefined, base: string): { mergeDetail?: string } {
+  const words: Record<string, string> = {
+    dirty: `conflicts with ${base}`,
+    behind: `behind ${base}`,
+    blocked: `blocked by ${base}'s rules (a required review or check)`,
+    unstable: "mergeable, with checks that do not pass",
+    draft: "a draft: not ready to merge",
+    unknown: "not known yet: GitHub is still working it out",
+  };
+  if (state === undefined || state === "clean" || state === "has_hooks") return {};
+  return { mergeDetail: words[state] ?? `GitHub says ${state}` };
+}
+
 const stateOf = (pull: GitHubPull): ProposalSummary["state"] => (pull.state === "open" ? "open" : pull.merged_at !== null ? "merged" : "closed");
 
 /** The repository a call works on, and GitHub's client of it. */
@@ -102,7 +117,7 @@ export default defineComponent({
     const connect = async (ctx: AppContext): Promise<Connection> => {
       const repository = await access.repository(ctx);
       if (repository === undefined) {
-        throw new ProposalsError("not_connected", 503, `Self-improvement is not connected: GitHub is not. Connect the project's repository in ${CONNECT}`);
+        throw new ProposalsError("not_connected", `Self-improvement is not connected: GitHub is not. Connect the project's repository in ${CONNECT}`);
       }
       const lower = repository.toLowerCase();
       return {
@@ -114,12 +129,12 @@ export default defineComponent({
 
     /** `error` from GitHub as a `ProposalsError`; `notFound` for a 404 that means something to the caller. */
     const fromGitHub = (error: GitHubError, secretName: string, repository: string, notFound?: ProposalsError): ProposalsError => {
-      if (error.retryAfter !== undefined) return new ProposalsError("rate_limited", 429, `GitHub's rate limit for ${secretName}: try again in ${error.retryAfter} s`, error.retryAfter);
-      if (error.status === 401) return new ProposalsError("unauthorized", 502, `GitHub refused ${secretName}: it is wrong, expired or revoked`);
-      if (error.status === 403) return new ProposalsError("forbidden", 502, `GitHub refused ${secretName} on ${repository}: ${error.message}. It lacks a permission (proposals-github's README, "Permissions")`);
-      if (error.status === 404) return notFound ?? new ProposalsError("missing_repository", 502, `GitHub has no ${repository} that ${secretName} can read: check the repository and its access in ${CONNECT}`);
-      if (error.status === 0 || error.status >= 500) return new ProposalsError("unavailable", 502, `GitHub did not answer well (${error.status === 0 ? error.message : `HTTP ${error.status}`}): try again`);
-      return new ProposalsError("refused", 502, `GitHub refused (${error.status}): ${error.message}`);
+      if (error.retryAfter !== undefined) return new ProposalsError("rate_limited", `GitHub's rate limit for ${secretName}: try again in ${error.retryAfter} s`, error.retryAfter);
+      if (error.status === 401) return new ProposalsError("unauthorized", `GitHub refused ${secretName}: it is wrong, expired or revoked`);
+      if (error.status === 403) return new ProposalsError("forbidden", `GitHub refused ${secretName} on ${repository}: ${error.message}. It lacks a permission (proposals-github's README, "Permissions")`);
+      if (error.status === 404) return notFound ?? new ProposalsError("missing_repository", `GitHub has no ${repository} that ${secretName} can read: check the repository and its access in ${CONNECT}`);
+      if (error.status === 0 || error.status >= 500) return new ProposalsError("unavailable", `GitHub did not answer well (${error.status === 0 ? error.message : `HTTP ${error.status}`}): try again`);
+      return new ProposalsError("refused", `GitHub refused (${error.status}): ${error.message}`);
     };
 
     /** GitHub's answer to `call`, a `ProposalsError` saying why it failed. */
@@ -132,12 +147,12 @@ export default defineComponent({
       }
     };
 
-    const notFound = (repository: string, id: string) => new ProposalsError("not_found", 404, `${repository} has no proposal ${id}: no branch ${prefix}${id}`);
+    const notFound = (repository: string, id: string) => new ProposalsError("not_found", `${repository} has no proposal ${id}: no branch ${prefix}${id}`);
     const topicOf = (pull: GitHubPull) => pull.head.ref.slice(prefix.length);
 
     const summaryOf = (pull: GitHubPull, checks?: ProposalChecks, previewUrl?: string): ProposalSummary => ({
       id: topicOf(pull),
-      number: pull.number,
+      ref: `#${pull.number}`,
       title: pull.title,
       author: pull.user?.login ?? "unknown",
       branch: pull.head.ref,
@@ -145,7 +160,7 @@ export default defineComponent({
       updatedAt: pull.updated_at,
       ...(pull.closed_at !== null && { closedAt: pull.closed_at }),
       state: stateOf(pull),
-      draft: pull.draft === true,
+      ...(pull.draft === true && { draft: true }),
       ...(checks !== undefined && { checks }),
       url: pull.html_url,
       ...(previewUrl !== undefined && { previewUrl }),
@@ -355,7 +370,7 @@ export default defineComponent({
           defaultBranch: full.base.repo.default_branch,
           head: full.head.sha,
           mergeable: full.mergeable ?? null,
-          mergeableState: full.mergeable_state ?? "unknown",
+          ...mergeDetailOf(full.mergeable_state, full.base.ref),
           additions: full.additions ?? 0,
           deletions: full.deletions ?? 0,
           changedFiles: full.changed_files ?? files.length,
@@ -416,10 +431,8 @@ export default defineComponent({
           url: `https://github.com/${repository}.git`,
           mainBranch: "main",
           branchPrefix: prefix,
-          authorization: async () => {
-            const token = await access.token(ctx).catch(() => undefined);
-            return token === undefined ? undefined : `Basic ${btoa(`x-access-token:${token}`)}`;
-          },
+          // `github`'s token, asked when git needs it; its refusal (not connected) says how to connect.
+          authorization: async () => `Basic ${btoa(`x-access-token:${await access.token(ctx)}`)}`,
         };
       },
     };

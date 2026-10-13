@@ -94,7 +94,7 @@ test("it installs the tool fetch under its own name, with replay unsafe", async 
 /** Runs one call; a failure rejects, as pi-durable sees it before making the error result. */
 async function run(args: Record<string, unknown>, tool: ToolRegistration = createFetchTool(), context: Context = ctx): Promise<string> {
   const result = await tool.execute(args as never, {} as ToolExecutionApi, context);
-  return (result.content ?? []).flatMap((part) => (part.type === "text" ? [part.text] : [])).join("");
+  return (result.output ?? []).flatMap((part) => (part.type === "text" ? [part.text] : [])).join("");
 }
 
 test("the tool fetch, replay unsafe, whose description asks to confirm what is not a GET", () => {

@@ -10,7 +10,8 @@
  * - **Every route asks `admin.auth` first** (without a provider, nobody is an operator): without an
  *   operator, `401` and `proposals` is not asked.
  * - **Answers JSON** (`api.ts`): the contract's shapes; an action's refusal is `409` (`404` for
- *   `not_found`), a provider's failure (`ProposalsError`) its own status, `{ error, message }`.
+ *   `not_found`), a provider's failure (`ProposalsError`) the status of its code (`PROVIDER_STATUS`),
+ *   `{ error, message }`.
  * - **Approve and reject are logged** with the operator and the proposal.
  *
  * Targets: `server` and `durable`. On Cloudflare it goes in both Apps (`apps.worker: "default"`): the
@@ -19,7 +20,7 @@
 
 import { type AppContext, defineComponent } from "@pikit/core";
 import { type Operator, ProposalsError } from "@pikit/contracts";
-import { type ApproveResponse, MAX_COMMENT, type RejectResponse } from "./api.ts";
+import { type ApproveResponse, MAX_COMMENT, PROVIDER_STATUS, type RejectResponse } from "./api.ts";
 
 export * from "./api.ts";
 
@@ -60,13 +61,13 @@ export default defineComponent({
         } catch (error) {
           if (error instanceof Refusal) return json({ error: error.code, message: error.message }, error.status, error.headers);
           if (error instanceof ProposalsError) {
-            return json({ error: error.code, message: error.message }, error.status, error.retryAfter === undefined ? {} : { "retry-after": String(error.retryAfter) });
+            return json({ error: error.code, message: error.message }, PROVIDER_STATUS[error.code], error.retryAfter === undefined ? {} : { "retry-after": String(error.retryAfter) });
           }
           throw error;
         }
       };
 
-    /** `:id` of the request's path: a pull request's number, a branch's topic (`/` encoded). */
+    /** `:id` of the request's path: a proposal's id, its branch's topic (`/` encoded). */
     const idOf = (request: Request): string => {
       const segment = new URL(request.url).pathname.split("/")[4] ?? "";
       let id: string;

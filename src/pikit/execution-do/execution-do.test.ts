@@ -7,15 +7,15 @@
 
 import { afterEach, expect, test } from "bun:test";
 import { BACKGROUND_CONTEXT, defineApp, defineComponent, silentLogger, withContextValue } from "@pikit/core";
-import { type GitHubAccess, GitHubNotConnectedError } from "@pikit/contracts";
+import type { Proposals, ProposalsRemote } from "@pikit/contracts";
 import { WORKERS_HOST, type WorkersHost } from "@pikit/contracts/cloudflare";
 import { createLifecycleConformance } from "@pikit/core/testing";
-import { withWorkersHost } from "@pikit/contracts/testing";
+import { withWorkersHost } from "@pikit/contracts/cloudflare/testing";
 import type { ExecutionEnv } from "@pikit/pi-adapter";
 import { createDurableExecutionConformance, createWorkspaceGitConformance } from "@pikit/pi-adapter/execution/testing";
 import { fakeDurableObjectStorage, fakeObjectHost } from "./durable-object.test-support.ts";
 import { createFiles, type DurableObjectFilesStorage } from "./files.ts";
-import { branchAllowed, githubRepository } from "./git.ts";
+import { branchAllowed, githubRepository, remoteKey } from "./git.ts";
 import { createFakeGitHub, type FakeGitHub } from "./git-server.test-support.ts";
 import executionDo from "./index.ts";
 
@@ -26,22 +26,32 @@ afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-/** A `github` double: the connected repository (none at first) and its token. */
-function githubDouble(connected?: string) {
-  const state = { connected, asked: 0 };
-  const access: GitHubAccess = {
-    repository: async () => state.connected,
-    async token() {
-      state.asked++;
-      if (state.connected === undefined) throw new GitHubNotConnectedError("GitHub is not connected: connect it in the dashboard's Settings → GitHub");
-      return TOKEN;
-    },
+/** `proposals` whose only part this component reads is `remote()`. */
+function remoteOnly(remote: () => Promise<ProposalsRemote | undefined>): Proposals {
+  const unused = async (): Promise<never> => {
+    throw new Error("not used by execution-do");
   };
-  return { state, access };
+  return { status: unused, list: unused, get: unused, approve: unused, reject: unused, remote };
 }
 
-/** A started app with this component over `storage`, a `github` when given, and its environments. */
-async function started(options: { storage?: DurableObjectFilesStorage; config?: Record<string, unknown>; github?: GitHubAccess } = {}) {
+/** The remote of `repository` on the fake GitHub, authorized with `token`, as proposals-github gives it. */
+function githubRemote(repository: string, token: string): Extract<ProposalsRemote, { kind: "https" }> {
+  return { kind: "https", url: `https://github.com/${repository}.git`, mainBranch: "main", branchPrefix: "pikit/self/", authorization: async () => `Basic ${btoa(`x-access-token:${token}`)}` };
+}
+
+/** A `proposals` double: where proposals go (nowhere at first), and how often its credential was asked for. */
+function proposalsDouble(connected?: string) {
+  const state = { connected, asked: 0 };
+  const proposals = remoteOnly(async () => {
+    if (state.connected === undefined) return undefined;
+    const remote = githubRemote(state.connected, TOKEN);
+    return { ...remote, authorization: () => (state.asked++, remote.authorization()) };
+  });
+  return { state, proposals };
+}
+
+/** A started app with this component over `storage`, a `proposals` when given, and its environments. */
+async function started(options: { storage?: DurableObjectFilesStorage; config?: Record<string, unknown>; proposals?: Proposals } = {}) {
   const storage = options.storage ?? fakeDurableObjectStorage();
   let found: { files: ExecutionEnv; shell: ExecutionEnv } | undefined;
   const reader = defineComponent({
@@ -52,9 +62,9 @@ async function started(options: { storage?: DurableObjectFilesStorage; config?: 
       return { start: () => void (found = { files: files.get(), shell: shell.get() }) };
     },
   });
-  const github = defineComponent({ name: "github-test", setup: (pikit) => void (options.github !== undefined && pikit.provide("github", options.github)) });
+  const proposals = defineComponent({ name: "proposals-test", setup: (pikit) => void (options.proposals !== undefined && pikit.provide("proposals", options.proposals)) });
   const app = await defineApp({
-    components: [github, executionDo, reader],
+    components: [proposals, executionDo, reader],
     config: { "execution-do": options.config ?? {} },
     logger: silentLogger,
   }).create();
@@ -86,7 +96,7 @@ for (const c of createWorkspaceGitConformance(
   async (files) => {
     const github = await createFakeGitHub(fakeDurableObjectStorage(), { "acme/app": { files, private: true } }, MARKER);
     globalThis.fetch = github.fetch as typeof fetch;
-    const { app, env } = await started({ github: { repository: async () => "acme/app", token: async () => MARKER } });
+    const { app, env } = await started({ proposals: remoteOnly(async () => githubRemote("acme/app", MARKER)) });
     return { env, remote: "https://github.com/acme/app", head: (branch) => github.branch("acme/app", branch), dispose: () => app.stop() };
   },
   { credential: MARKER },
@@ -102,7 +112,7 @@ for (const c of createLifecycleConformance(() => ({ component: hosted }))) {
 
 test("what setup declares: component.json's provides / requires / optional come from it", async () => {
   const app = await defineApp({ components: [executionDo], logger: silentLogger }).create();
-  expect(app.describe().components).toEqual([{ name: "execution-do", provides: ["execution", "execution.shell"], requires: [], optional: ["github"] }]);
+  expect(app.describe().components).toEqual([{ name: "execution-do", provides: ["execution", "execution.shell"], requires: [], optional: ["proposals"] }]);
 });
 
 /** The reason `app.start` fails with, when the host in its context is `host`. */
@@ -222,8 +232,10 @@ test("files inside .git change only through git: the file tools and the shell ar
   await app.stop();
 });
 
-test("GitHub URLs and pushed branches are checked", () => {
+test("GitHub URLs, remotes and pushed branches are checked", () => {
   expect(githubRepository("https://github.com/acme/app.git")).toEqual({ owner: "acme", name: "app" });
+  expect(remoteKey("https://GitHub.com/Acme/App.git/")).toBe(remoteKey("https://github.com/acme/app"));
+  expect(remoteKey("https://github.com/acme/app")).not.toBe(remoteKey("https://github.com/acme/application"));
   expect(githubRepository("git@github.com:acme/app.git")).toBeUndefined();
   expect(githubRepository("https://gitlab.com/acme/app")).toBeUndefined();
   expect(branchAllowed("pikit/self/better-readme", "pikit/self/")).toBe(true);
@@ -243,10 +255,10 @@ async function fakeGitHub(): Promise<FakeGitHub> {
   return github;
 }
 
-test("git as real git: clone, checkout -b, status, diff, add, commit, log, push; the token only for the connected repository", async () => {
+test("git as real git: clone, checkout -b, status, diff, add, commit, log, push; the token only for where proposals go", async () => {
   const github = await fakeGitHub();
-  const { access } = githubDouble("acme/app");
-  const { app, env } = await started({ github: access });
+  const { proposals } = proposalsDouble("acme/app");
+  const { app, env } = await started({ proposals });
 
   const clone = await run(env, "git clone https://github.com/acme/app");
   expect(clone.output).toContain("you may push branches pikit/self/");
@@ -277,7 +289,7 @@ test("git as real git: clone, checkout -b, status, diff, add, commit, log, push;
   // Back to main, whose files are as they were; HEAD as the branch to push works too.
   expect((await run(env, "git checkout main && cat src/b.ts", "app")).output).toContain("No such file");
   expect((await run(env, "git checkout pikit/self/explain-more && git push origin HEAD", "app")).exitCode).toBe(0);
-  // The token went to GitHub for the connected repository, and never to the shell.
+  // The token went to GitHub for the proposals' repository, and never to the shell.
   expect(github.requests.every((request) => request.authorization !== null)).toBe(true);
   expect((await run(env, "env; set")).output).not.toContain(TOKEN);
   await app.stop();
@@ -285,7 +297,7 @@ test("git as real git: clone, checkout -b, status, diff, add, commit, log, push;
 
 test("commit takes what was added (-a: the tracked changes); add says when a path matches nothing; the rest is not supported here, git pr included", async () => {
   await fakeGitHub();
-  const { app, env } = await started({ github: githubDouble("acme/app").access });
+  const { app, env } = await started({ proposals: proposalsDouble("acme/app").proposals });
   await run(env, "git clone https://github.com/acme/app");
   await env.appendFile("app/README.md", "more\n", ctx);
   await env.writeFile("app/new.txt", "new\n", ctx);
@@ -306,33 +318,53 @@ test("commit takes what was added (-a: the tracked changes); add says when a pat
   await app.stop();
 });
 
-test("git push is fenced: the branch prefix, a branch that exists, the connected repository only, GitHub connected", async () => {
+test("git push is fenced: where proposals go, its branch prefix, a branch that exists", async () => {
   const github = await fakeGitHub();
-  const { state, access } = githubDouble();
-  const { app, env } = await started({ github: access });
-  // Not connected: clones are public and read-only, and a push says how to connect.
+  const { state, proposals } = proposalsDouble();
+  const { app, env } = await started({ proposals });
+  // Nowhere to go: clones are public and read-only, and a push says so, asking for no credential.
   expect((await run(env, "git clone https://github.com/acme/app")).output).toContain("read-only");
   await run(env, "git checkout -b pikit/self/x && echo x >> README.md && git commit -am change", "app");
-  expect((await run(env, "git push origin pikit/self/x", "app")).output).toContain("GitHub is not connected: an operator connects it in the dashboard's Settings → GitHub");
+  expect((await run(env, "git push origin pikit/self/x", "app")).output).toContain("nothing to push to: proposals are not set up here");
   expect(state.asked).toBe(0);
 
   state.connected = "acme/other";
-  expect((await run(env, "git push origin pikit/self/x", "app")).output).toContain("pushing to acme/app is not allowed here: only to acme/other, the connected repository");
-  // Connected now: read at the next push, no restart.
+  expect((await run(env, "git push origin pikit/self/x", "app")).output).toContain(
+    "pushing to https://github.com/acme/app is not allowed here: only to https://github.com/acme/other.git, where proposals go",
+  );
+  // Proposals go there now: read at the next push, no restart.
   state.connected = "acme/app";
   expect(await run(env, "git push origin main", "app")).toEqual({ exitCode: 1, output: expect.stringContaining("only to branches pikit/self/<topic>") });
   expect((await run(env, "git push origin feature/x", "app")).exitCode).toBe(1);
   expect((await run(env, "git push origin pikit/self/missing", "app")).output).toContain("src refspec pikit/self/missing does not match any");
+  expect(state.asked).toBe(0);
   expect((await run(env, "git push origin pikit/self/x", "app")).exitCode).toBe(0);
+  expect(state.asked).toBe(1);
   expect(github.pushes.map((push) => push.repository)).toEqual(["acme/app"]);
 
-  // No github provider at all: the same as not connected.
+  // No proposals provider at all: the same as nowhere to go.
   const without = await started();
   await run(without.env, "git clone https://github.com/acme/app && cd app && git checkout -b pikit/self/y && echo y >> README.md && git commit -am y");
-  expect((await run(without.env, "git push origin pikit/self/y", "app")).output).toContain("GitHub is not connected");
+  expect((await run(without.env, "git push origin pikit/self/y", "app")).output).toContain("nothing to push to");
   expect(github.pushes.length).toBe(1);
   await app.stop();
   await without.app.stop();
+});
+
+test("git push follows the proposals' own prefix, and refuses a remote that is a path", async () => {
+  await fakeGitHub();
+  const prefixed = remoteOnly(async () => ({ ...githubRemote("acme/app", TOKEN), branchPrefix: "bot/" }));
+  const { app, env } = await started({ proposals: prefixed });
+  expect((await run(env, "git clone https://github.com/acme/app")).output).toContain("you may push branches bot/");
+  await run(env, "git checkout -b pikit/self/x && echo x >> README.md && git commit -am change", "app");
+  expect((await run(env, "git push origin pikit/self/x", "app")).output).toContain("only to branches bot/<topic>");
+  expect((await run(env, "git checkout -b bot/x && git push origin bot/x", "app")).exitCode).toBe(0);
+  await app.stop();
+
+  const local = remoteOnly(async () => ({ kind: "path", path: "/srv/proposals.git", mainBranch: "main", branchPrefix: "pikit/self/" }));
+  const onPath = await started({ proposals: local });
+  expect((await run(onPath.env, "git clone https://github.com/acme/app")).output).toContain("pushes only over HTTPS");
+  await onPath.app.stop();
 });
 
 test("git clone: GitHub over HTTPS only, a private repository needs to be the connected one, and a failed clone leaves nothing", async () => {
@@ -348,8 +380,8 @@ test("git clone: GitHub over HTTPS only, a private repository needs to be the co
   expect((await run(env, "git clone https://github.com/acme/app")).exitCode).toBe(128);
   expect(await run(env, "ls")).toEqual({ exitCode: 0, output: "" });
 
-  // Connected to acme/secret: its token for it; another repository is cloned without one.
-  const connected = await started({ github: githubDouble("acme/secret").access });
+  // Proposals go to acme/secret: its token for it; another repository is cloned without one.
+  const connected = await started({ proposals: proposalsDouble("acme/secret").proposals });
   globalThis.fetch = github.fetch as typeof fetch;
   expect((await run(connected.env, "git clone https://github.com/acme/secret && cat secret/README.md")).output).toContain("secret\n(second commit)\n");
   expect((await run(connected.env, "git clone https://github.com/acme/secret")).output).toContain("already exists");

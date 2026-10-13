@@ -382,6 +382,8 @@ export default defineComponent({
     };
 
     const actorInbox: ActorInbox = {
+      // An object is one key's actor (`idFromName(key)`); the Worker's App has no actors, and refuses handlers.
+      scope: "one",
       handle(type, handler) {
         if (typeof type !== "string" || type === "") throw new TypeError("platform-cloudflare: a message type is a non-empty string, prefixed with the component that handles it");
         if (opened().object === undefined) {

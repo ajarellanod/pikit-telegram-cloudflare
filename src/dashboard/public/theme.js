@@ -5,7 +5,7 @@
   var choice = null;
   try {
     choice = localStorage.getItem("pikit-theme");
-  } catch (error) {}
+  } catch {}
   var dark = choice === "dark" || (choice !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", dark);
 })();

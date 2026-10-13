@@ -173,7 +173,7 @@ export class Runtime {
       return conversation;
     },
     get: async (key) => this.pointers.get(key),
-    reset: async (key, ctx) => {
+    reset: async (key, _agent, ctx) => {
       const previous = this.pointers.get(key);
       if (previous === undefined) return undefined;
       const conversation = { ...previous, conversationId: this.idOf(this.next++) };

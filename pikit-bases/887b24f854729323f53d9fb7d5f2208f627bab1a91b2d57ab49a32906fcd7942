@@ -1,0 +1,141 @@
+# execution-do
+
+The agent's workspace and shell on Cloudflare, inside the conversation's Durable Object (SPEC §4.1,
+C7). Its files live in the object's own SQLite; its shell is a bash interpreter written in TypeScript,
+with `git`, `node` and `curl`. pi-durable's own `read`, `write`, `edit` and `bash` tools work on it unchanged.
+
+- **Provides:** `execution` and `execution.shell` (one pi-durable `ExecutionEnv`, `env.ts`, whose files are the object's own namespace: `execution-do:<object id>`).
+- **Requires:** nothing. **Optional:** `proposals` (proposals-github): where the agent pushes, under
+  which prefix, and the credential for it. Without it, or while it is not connected, clones are
+  public and read-only.
+- **Target:** `durable`. On a server, use `execution-local`.
+- **Installs to:** `src/pikit/execution-do/`.
+- **npm dependencies:** `just-bash` 3.4.2, `isomorphic-git` 1.42.3, `quickjs-emscripten-core` and
+  `@jitl/quickjs-wasmfile-release-sync` 0.32.0, `diff` 8.0.4, `@pikit/pi-adapter` (pinned with Pi),
+  `typebox`.
+
+```sh
+pikit add execution-do tool-bash tool-read tool-write tool-edit
+```
+
+It belongs in the Durable Object's App (the default export of `pikit.config.ts`), not in the
+Worker's. It reads the object from `WORKERS_HOST`, which `deployment-cloudflare` puts in the start
+context, and refuses to start without it, or on an object without SQLite.
+
+## What it does
+
+- **Files in the object's SQL.** Every file, directory and symlink is a row of `execution_do_nodes`;
+  a file's bytes are rows of `execution_do_chunks`, 1 MB each (a row holds at most 2 MB). They survive
+  evictions and deploys, like everything the object stores. The agent works in `root` (`/work`);
+  `/tmp` and the rest of the tree are the object's too.
+- **A shell without processes.** [just-bash](https://github.com/vercel-labs/just-bash): pipes,
+  redirections, loops, functions, and about 80 commands (`ls`, `cat`, `grep`, `sed`, `awk`, `find`,
+  `sort`, `jq`, `diff`…). `npm`, `python`, `tar` and native binaries are not here.
+- **`node`** (and `js`): JavaScript in QuickJS compiled to WebAssembly. `node -e CODE`, `node -p EXPR`,
+  `node FILE`, or a script on stdin; `require("fs")` and `require("path")` over the workspace,
+  `console`, `process.argv`, `process.env`, `process.exit`. No npm, no network.
+- **`curl`**: just-bash's own, over the Worker's `fetch`. It carries no credential.
+- **`git`**: isomorphic-git, behaving as real git for the subset an agent needs, so its steps are the
+  same on every target: `clone` (GitHub over HTTPS, latest commit only), `checkout -b <branch>` and
+  `checkout <branch>`, `status` (short codes: `M `, ` M`, `A `, `D `, `??`), `diff` (unstaged; `--staged`
+  for what is added), `add <path>…` / `add -A`, `commit -m` (what was added; `-a` adds the tracked
+  changes first, never an untracked file), `log` (real git's format; `--oneline`, `-n <count>`),
+  `push origin <branch>` (or `HEAD`). Anything else
+  (`pull`, `merge`, `reset`, `switch`, restoring files) says it is not supported here. There is no pull
+  request command: a pushed `pikit/self/*` branch is the proposal, which the proposals' provider shows
+  the operator.
+- **pi-durable's output rules.** A command's output streams to pi-durable's `bash` tool, which keeps
+  what it shows within its limits; past them, the whole output is also written to a file under `/tmp`
+  (`spillPath`). A host's argv (`exec(["git", "status"])`) reaches the program unparsed.
+- **No file watching.** `watch` answers `not_supported`: only the object changes its files. pi-durable's
+  `ExecutionEnv` suite passes on everything else, in workerd too.
+
+## The fences
+
+They are code, not instructions to the model:
+
+- **Only `git` changes files inside `.git`.** Pi's file tools, the shell and `node` get "permission
+  denied" for any change there, a symlink pointing into it included. Deleting a whole repository
+  (`rm -r repo`) is allowed.
+- **Pushes go only to where proposals go, on branches under its prefix**: `proposals.remote()` (its
+  URL and `branchPrefix`, `pikit/self/` by default), never to `main`, and only a branch that exists
+  (`git checkout -b` first). The remote is read at each push, so connecting GitHub after deploying
+  (the dashboard's Settings → GitHub) needs no deploy; while proposals go nowhere (no provider, or
+  not connected), a push says so. execution-do never knows which provider it is. Those branches are
+  the agent's own, so a push replaces what is there.
+- **The credential never reaches the shell.** It is the remote's `authorization()` (proposals-github:
+  `github`'s token, github-app's short-lived installation token or github-token's secret), asked for
+  when `git` needs it and sent only to that remote: other repositories are cloned without one (public
+  GitHub repositories only). The shell has no process that could read one, and a push reaches only
+  the prefix's branches: one repository-scoped credential is enough, and a ruleset on `main` an extra
+  layer.
+- **A failed clone leaves nothing behind**, and a 429 or 5xx is retried twice.
+
+## Config
+
+```ts
+"execution-do": {
+  root: "/work",                        // default: the working directory and HOME
+  shell: { timeLimitSeconds: 25 },      // default
+  node: { interruptBudget: 10_000, heapMegabytes: 32 }, // defaults
+}
+```
+
+The branch prefix is not here: it is the proposals' own (`proposals.remote().branchPrefix`, set in
+proposals-github's config), so the two can never disagree.
+
+## On Cloudflare
+
+Two settings in the Worker's `wrangler.jsonc`, besides the object's class in `new_sqlite_classes`.
+`deployment-cloudflare`'s `wrangler.jsonc` has both; keep them if you write your own:
+
+```jsonc
+"compatibility_flags": ["nodejs_compat"],   // isomorphic-git uses Node's Buffer
+"rules": [{ "type": "CompiledWasm", "globs": ["@jitl/quickjs-wasmfile-release-sync/wasm"], "fallthrough": true }]
+```
+
+The rule bundles QuickJS's WebAssembly as a compiled module (a Worker cannot compile WebAssembly at
+run time). Wrangler's own rule matches only imports ending in `.wasm`, and this one is a package
+export; without the rule, the build fails with `No loader is configured for ".wasm" files`.
+
+**Bundle size.** In the workerd lane (`tests/workerd`, `bun run --cwd tests/workerd bundle`),
+a conversation's object with storage-do, runtime-pi (pi-durable) and pi-durable's four tools is
+980 KiB gzip with execution-do (4.0 MB uncompressed, of which QuickJS's WebAssembly is 503 KB,
+226 KiB gzip). The budget is 10 MB compressed.
+
+## Limits
+
+Measured on Cloudflare's Free plan (September 2026), or documented:
+
+- **CPU: 30 s per event** (a request, an alarm). Past it the object is reset; what was committed
+  survives. A clone of a 30 MB repository took 5.9 s of CPU; `grep -rn` over it 0.7 s.
+- **The shell's time limit is wall clock**, and in a Worker the clock does not move while code
+  computes: it stops commands that wait on the network, not a loop. just-bash's own limits (commands,
+  loop iterations) stop those, and `node`'s interrupt budget stops a script: about 1,150 interrupts
+  per CPU second, so 10,000 is about 9 s.
+- **Memory: about 128 MB per isolate**, shared with the app. `node`'s heap is capped
+  (`heapMegabytes`), but many small allocations can still reset the object.
+- **50 subrequests per event on Free** (10,000 on paid): a `curl` is one, a clone or a push two.
+- **Output:** 4 MB per command, `curl` reads at most 4 MB and waits 20 s.
+- **Storage:** 1 GB per object on Free, 10 GB on paid. Clones are shallow for that reason.
+- **Git:** GitHub over HTTPS only; no `fetch`, `pull`, `merge` or `checkout` of another branch.
+
+## Removing it
+
+`pikit remove execution-do` refuses while a component requires `execution` or `execution.shell`
+(the `tool-*` components). The files stay in each object's `execution_do_*` tables until the object is
+deleted: they are your data.
+
+## Tests
+
+Copied with the component, they run in your project under `bun test`, over a double of a Durable
+Object's storage (`node:sqlite`) and a fake GitHub reached through `fetch` (no network): Pi's
+`ExecutionEnv` suite with a shell, the lifecycle suite, files in chunks surviving a restart, the
+shell, `node` and its limits, `curl`, the `.git` fence, and `git` from clone to push with every fence
+(the proposals' remote only, its credential for it alone, its own prefix, nowhere to go, no
+provider, a remote that is a path), and what real
+git does with `add` and `commit`. The workspace git suite (`createWorkspaceGitConformance`, the one
+execution-local passes with the machine's git) runs the steward's steps against the fake GitHub, and
+checks that its token, a marker, appears nowhere the agent can read (variables, outputs, every file
+of the workspace, `.git/config` included). pikit also runs the component in workerd on a real
+SQLite-backed Durable Object, with Pi's own tools through the `tool-*` components (`tests/workerd`).

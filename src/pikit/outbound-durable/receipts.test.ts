@@ -113,7 +113,7 @@ test("two processes migrating at once: the one that waited for the lock finds th
     await createStore(racing).migrate();
 
     expect(raced).toBe(true);
-    expect(await first.database.query("SELECT value FROM outbound_meta WHERE name = 'schema_version'")).toEqual([{ value: SCHEMA_VERSION }]);
+    expect(await first.database.query("SELECT value FROM outbound_durable_meta WHERE name = 'schema_version'")).toEqual([{ value: SCHEMA_VERSION }]);
   } finally {
     await first.close();
     await second.close();
@@ -123,8 +123,8 @@ test("two processes migrating at once: the one that waited for the lock finds th
 test("a database written by a newer outbox is refused at start", async () => {
   const database = temporaryDatabase();
   const newer = new DatabaseSync(database);
-  newer.exec("CREATE TABLE outbound_meta (name TEXT PRIMARY KEY, value INTEGER NOT NULL)");
-  newer.prepare("INSERT INTO outbound_meta (name, value) VALUES ('schema_version', ?)").run(SCHEMA_VERSION + 1);
+  newer.exec("CREATE TABLE outbound_durable_meta (name TEXT PRIMARY KEY, value INTEGER NOT NULL)");
+  newer.prepare("INSERT INTO outbound_durable_meta (name, value) VALUES ('schema_version', ?)").run(SCHEMA_VERSION + 1);
   newer.close();
   const failure = await openOutbox(database, createManualClock()).then(
     () => undefined,

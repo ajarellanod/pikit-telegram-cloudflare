@@ -71,6 +71,7 @@ import {
   AgentUnavailableError,
   type ConversationRef,
   defineAgent,
+  stewardProblem,
   type Wakeups,
 } from "@pikit/contracts";
 import { WORKERS_HOST } from "@pikit/contracts/cloudflare";
@@ -87,6 +88,7 @@ import {
 } from "@pikit/pi-adapter";
 import Type from "typebox";
 import { type AgentOverrides, overridesOf, overridesSchema, withOverride } from "./overrides.ts";
+import { createReopenBackoff, createReopener, type Reopener } from "./reopen.ts";
 import { resumePending, type ResumeOptions } from "./resume.ts";
 
 const Config = Type.Object({
@@ -270,6 +272,8 @@ export function createRuntimePi(options: RuntimePiOptions = {}) {
       let resuming: { controller: AbortController; done: Promise<void> } | undefined;
       /** With `wakeups`: the driving of this App's runs, from start to stop. */
       let driver: Driver | undefined;
+      /** Without `wakeups`: what opens pi-durable again after a storage error closed it, from start to stop. */
+      let reopener: Reopener | undefined;
       const current = (): DurableRuntime => {
         if (runtime === undefined) throw new Error("runtime-pi: agent.runtime used while the app is not running");
         return runtime;
@@ -338,15 +342,8 @@ export function createRuntimePi(options: RuntimePiOptions = {}) {
           // Fail at start, not at the first message: an agent that cannot run is a broken deployment.
           if (agents.keys().length === 0) throw new Error("runtime-pi: no agent.definition is provided");
           // One steward at most (SPEC §6): the agent its operators ask to change the project.
-          const stewards = agents
-            .keys()
-            .sort()
-            .filter((name) => agents.get(name)?.steward === true);
-          if (stewards.length > 1) {
-            throw new Error(
-              `runtime-pi: agents ${stewards.map((name) => `"${name}"`).join(" and ")} are each marked \`steward: true\`; a project has one steward, its main agent: take it off the others`,
-            );
-          }
+          const stewards = stewardProblem(agents.keys().flatMap((name) => agents.get(name) ?? []));
+          if (stewards !== undefined) throw new Error(`runtime-pi: ${stewards}`);
           for (const key of tools.keys()) {
             const tool = tools.get(key);
             if (tool !== undefined && tool.name !== key) {
@@ -392,7 +389,12 @@ export function createRuntimePi(options: RuntimePiOptions = {}) {
           const background = ctx.derive(() => BACKGROUND_CONTEXT);
           const now = () => background.clock.now();
           const resumeOptions: ResumeOptions = { abandonAfterMs: config.abandonPendingAfterHours * 60 * 60 * 1_000, skip: unread };
-          const drives = wakeups === undefined ? undefined : createDriver(wakeups, background, resumeOptions, refresh);
+          // What a storage error leaves pending must not wait for a message: a wakeup reopens pi-durable,
+          // or, on a server, a timer here (reopen.ts).
+          const backoff = createReopenBackoff(now);
+          const drives = wakeups === undefined ? undefined : createDriver(wakeups, background, resumeOptions, refresh, backoff);
+          const reopens = drives === undefined ? createReopener(async () => void (await current().inspect(background)), background, backoff) : undefined;
+          reopener = reopens;
           const db = sql.get();
           const created = createDurableRuntime({
             db,
@@ -408,6 +410,7 @@ export function createRuntimePi(options: RuntimePiOptions = {}) {
             workspace: () => workspace.get(),
             ...(options.settings !== undefined && { settings: options.settings }),
             ...(drives !== undefined && { onIdleWithPendingWork: (inspection) => drives.later(nextWakeAtOf(inspection, { now })) }),
+            onFailure: () => (drives !== undefined ? drives.failed() : reopens?.failed()),
           });
           runtime = created;
           if (drives !== undefined) {
@@ -444,6 +447,8 @@ export function createRuntimePi(options: RuntimePiOptions = {}) {
           resumed?.controller.abort(new Error("runtime-pi: stopping"));
           // A handler still waiting stops now, and asks again for what remains: the next App drives it.
           driver?.stop();
+          reopener?.stop();
+          reopener = undefined;
           driver = undefined;
           await stopping?.close(ctx);
           // Settles once `close` ended the conversations it opened; bounded by the stop deadline all the same.
@@ -464,6 +469,12 @@ interface Driver {
    * runtime so the host can go meanwhile.
    */
   later(time: number | undefined): Promise<void>;
+  /**
+   * The runtime's `onFailure`: a storage error closed pi-durable. Asks for the handler, whose
+   * `inspect` opens it again, after the backoff's next wait (reopen.ts). An open that fails there
+   * rejects the handler, which the wakeups provider runs again.
+   */
+  failed(): Promise<void>;
   /** Registers the handler for `runtime`. */
   attach(runtime: DurableRuntime): void;
   /** Cancels the handler's run in progress; nothing is registered after. */
@@ -486,7 +497,13 @@ interface Driver {
  * A request carries nothing: what to do is read from pi-durable each time, so
  * a handler that runs twice, or late, or after the object was evicted, does the right thing.
  */
-function createDriver(wakeups: Wakeups, background: AppContext, resumeOptions: ResumeOptions, refresh: (ctx: AppContext) => Promise<void>): Driver {
+function createDriver(
+  wakeups: Wakeups,
+  background: AppContext,
+  resumeOptions: ResumeOptions,
+  refresh: (ctx: AppContext) => Promise<void>,
+  backoff: () => number,
+): Driver {
   /** The earliest time asked for and not yet taken by a run of the handler, in this App. */
   let requested: number | undefined;
   /** Set by `later` during a run of the handler: what is left only waits for a time. */
@@ -550,6 +567,7 @@ function createDriver(wakeups: Wakeups, background: AppContext, resumeOptions: R
       waiting = true;
       if (time !== undefined) await wakeLater(time);
     },
+    failed: () => wakeLater(background.clock.now() + backoff()),
     attach(runtime) {
       wakeups.handle(DRIVE, handler(runtime));
     },

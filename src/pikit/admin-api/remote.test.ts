@@ -75,7 +75,7 @@ class Platform {
     const platform = defineComponent({
       name: "platform-test",
       setup: (pikit) => {
-        pikit.provide("actor.inbox", { handle: (type, handler) => void handlers.set(type, handler), answer: (type, handler) => void answers.set(type, handler) });
+        pikit.provide("actor.inbox", { scope: "one", handle: (type, handler) => void handlers.set(type, handler), answer: (type, handler) => void answers.set(type, handler) });
         pikit.provide("actor.mailbox", this.mailbox);
       },
     });
@@ -434,12 +434,13 @@ test("every Worker route answers 401 without an operator, and calls no object", 
   expect(platform.objects.size).toBe(0);
 });
 
-test("in an object's App the default export answers only with actor.inbox and actor.mailbox; without them its start says so", async () => {
+test("in an App that is one key's actor the default export tells the index through actor.mailbox; without it its start says so", async () => {
   const runtime = new Runtime();
-  const app = await defineApp({ components: [auth, runtime.component(), sqliteStorage(), adminApi], target: "durable", logger: silentLogger }).create();
+  const inbox = defineComponent({ name: "inbox-test", setup: (pikit) => pikit.provide("actor.inbox", { scope: "one", handle: () => {}, answer: () => {} }) });
+  const app = await defineApp({ components: [auth, runtime.component(), inbox, sqliteStorage(), adminApi], logger: silentLogger }).create();
 
   const failed = (await app.start().catch((error: unknown) => error)) as Error;
-  expect(String(failed.cause)).toContain("admin-api: in a Durable Object's App it answers the Worker's calls and tells the conversation index, which needs actor.inbox, actor.mailbox");
+  expect(String(failed.cause)).toContain("admin-api: in an App that is one key's actor it tells the conversation index, which needs actor.mailbox");
 });
 
 test("a run that settles, fails or is resumed in an object tells the index (a run not resumed was told when its message was dispatched); a failed send is logged, not the run's", async () => {

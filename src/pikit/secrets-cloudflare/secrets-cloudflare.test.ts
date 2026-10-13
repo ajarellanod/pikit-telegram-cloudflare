@@ -8,7 +8,8 @@ import { expect, test } from "bun:test";
 import { BACKGROUND_CONTEXT, defineApp, defineComponent, silentLogger, withContextValue } from "@pikit/core";
 import type { SecretStore } from "@pikit/contracts";
 import { WORKERS_HOST } from "@pikit/contracts/cloudflare";
-import { createSecretStoreConformance, withWorkersHost } from "@pikit/contracts/testing";
+import { createSecretStoreConformance } from "@pikit/contracts/testing";
+import { withWorkersHost } from "@pikit/contracts/cloudflare/testing";
 import secretsCloudflare from "./index.ts";
 
 // The secrets contract, over an env seeded by the suite.

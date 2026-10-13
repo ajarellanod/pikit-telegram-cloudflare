@@ -108,19 +108,32 @@ test("an alarm nobody handles is logged and dropped; a delivery nobody handles r
   await expect(host.deliver("text", "k", null)).rejects.toThrow(/no component in the object's App handles deliveries/);
 });
 
-test("a second alarm or delivery handler fails the start: the object has one of each", async () => {
-  const twice = defineComponent({
-    name: "twice",
-    setup: () => ({
-      start(ctx) {
-        const object = ctx.value(WORKERS_HOST)?.object;
-        object?.onAlarm(async () => {});
-        object?.onAlarm(async () => {});
-      },
-    }),
-  });
-  const host = createObjectHost(defineApp({ components: [twice] }), fakeState(), {}, { logger: silentLogger });
-  await expect(host.health()).rejects.toThrow(/failed to start/);
+test("a second alarm, delivery or call handler fails the start: the object has one of each", async () => {
+  for (const hook of ["onAlarm", "onDeliver", "onCall"] as const) {
+    let refused: unknown;
+    const twice = defineComponent({
+      name: "twice",
+      setup: () => ({
+        start(ctx) {
+          const object = ctx.value(WORKERS_HOST)?.object;
+          const register = (object?.[hook] as ((handler: () => Promise<never>) => void) | undefined)?.bind(object);
+          const handler = async (): Promise<never> => {
+            throw new Error("never called");
+          };
+          register?.(handler);
+          try {
+            register?.(handler);
+          } catch (error) {
+            refused = error;
+            throw error;
+          }
+        },
+      }),
+    });
+    const host = createObjectHost(defineApp({ components: [twice] }), fakeState(), {}, { logger: silentLogger });
+    await expect(host.health()).rejects.toThrow(/failed to start/);
+    expect([hook, String(refused)]).toEqual([hook, expect.stringMatching(/already ha(s|ve) a handler/)]);
+  }
 });
 
 test("a failed start rolls back, rethrows (Cloudflare resets the object), and the next event starts a new App", async () => {

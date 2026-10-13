@@ -9,8 +9,9 @@
  * | `settings-store.sections` | — | `{ items: SettingsSection[] }`: the object's App's declarations, with their values |
  * | `settings-store.set` | `{ component, value, operator }` | `{ value }`: the value `get` now gives |
  *
- * A refusal is an `ActorCallError` whose code is the `SettingsError`'s (`unknown_component`,
- * `invalid_value`), or `invalid_request` for a malformed call; the caller turns it back.
+ * A refusal is an `ActorCallError` whose code is the refusal's (`unknown_component`, a
+ * `SettingsError`; `invalid_value`, an `InvalidSettingsError`), or `invalid_request` for a malformed
+ * call; the caller turns it back.
  *
  * - **A conversation's object reads at most one call per admission** (`createRemoteSource`): it keeps
  *   the values with their version, and a `get` within `freshMs` of the last call (a second) is
@@ -33,10 +34,9 @@ import {
   type Operator,
   type Settings,
   SettingsError,
-  type SettingsSection,
   type SettingsValue,
 } from "@pikit/contracts";
-import { createSettings, type Declarations, type SettingsSource } from "./settings.ts";
+import { createSettings, type Declarations, InvalidSettingsError, type SettingsSection, type SettingsSource, type SettingsStore } from "./settings.ts";
 import type { SettingsTable } from "./table.ts";
 
 /** The object that keeps the values on Cloudflare: an object of the conversations' class, never a conversation. */
@@ -55,23 +55,25 @@ type Fields = Record<string, unknown>;
 const fieldsOf = (message: JsonValue): Fields => (isJsonObject(message) ? message : {});
 const malformed = (what: string) => new ActorCallError("invalid_request", `settings-store: ${what}`);
 
-/** A `SettingsError` as it crosses a call. */
+/** A refusal (`SettingsError`, `InvalidSettingsError`) as it crosses a call. */
 function crossing(error: unknown): unknown {
-  return error instanceof SettingsError ? new ActorCallError(error.code, error.message) : error;
+  return error instanceof SettingsError || error instanceof InvalidSettingsError ? new ActorCallError(error.code, error.message) : error;
 }
 
-/** A call's refusal as the `SettingsError` it was, or as it came. */
+/** A call's refusal as the error it was, or as it came. */
 export function refusalOf(error: unknown): unknown {
   if (!(error instanceof ActorCallError)) return error;
   const code: string = error.code;
-  return code === "unknown_component" || code === "invalid_value" ? new SettingsError(code, error.message) : error;
+  if (code === "unknown_component") return new SettingsError(code, error.message);
+  if (code === "invalid_value") return new InvalidSettingsError(error.message);
+  return error;
 }
 
 /**
  * Registers the settings object's answers, over its table and its App's settings over that table
  * (`local`). Every object registers them; only the settings object is called. Call it in `start`.
  */
-export function answerCalls(inbox: ActorInbox, table: SettingsTable, local: Settings): void {
+export function answerCalls(inbox: ActorInbox, table: SettingsTable, local: SettingsStore): void {
   inbox.answer(CALL.read, async (_key, message) => {
     const held = fieldsOf(message).version;
     if (typeof held !== "number" || !Number.isInteger(held)) throw malformed('"version" is an integer');
@@ -138,16 +140,16 @@ export function createRemoteSource(mailbox: () => ActorMailbox | undefined, cloc
 
 /**
  * The `settings` of an App that is not the settings object (a conversation's object, the Worker's):
- * its own declarations, the values read from the settings object (`createRemoteSource`), and `set` as
- * a call to it, after which this App's next `get` asks again.
+ * its own declarations, the values read from the settings object (`createRemoteSource`), and the
+ * store's `set` as a call to it, after which this App's next `get` asks again.
  */
-export function createRemoteSettings(declarations: Declarations, mailbox: () => ActorMailbox | undefined, clock: Clock, freshMs = FRESH_MS): Settings {
+export function createRemoteSettings(declarations: Declarations, mailbox: () => ActorMailbox | undefined, clock: Clock, freshMs = FRESH_MS): Settings & SettingsStore {
   const source = createRemoteSource(mailbox, clock, freshMs);
   const admin = createRemoteAdmin(mailbox);
   return {
     ...createSettings(declarations, source),
     // Validated, stored and logged in the settings object; this App's next get asks it again.
-    async set(component, value, operator, ctx) {
+    async set(component: string, value: SettingsValue, operator: Operator, ctx: AppContext) {
       if (declarations.get(component) === undefined) throw new SettingsError("unknown_component", `"${component}" declared no settings`);
       const stored = await admin.set(component, value, operator, ctx);
       source.forget();
@@ -157,7 +159,7 @@ export function createRemoteSettings(declarations: Declarations, mailbox: () => 
 }
 
 /** `set` and `sections` as calls to the settings object: the Worker's routes, an object's `set`. */
-export function createRemoteAdmin(mailbox: () => ActorMailbox | undefined): Pick<Settings, "set" | "sections"> {
+export function createRemoteAdmin(mailbox: () => ActorMailbox | undefined): SettingsStore {
   const call = async (type: string, message: JsonValue, ctx: AppContext): Promise<Fields> => {
     const calls = mailbox();
     if (calls === undefined) throw new Error("settings-store: the settings object is reached through actor.mailbox: install platform-cloudflare");

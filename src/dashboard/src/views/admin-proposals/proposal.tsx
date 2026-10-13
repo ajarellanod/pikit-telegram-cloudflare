@@ -130,7 +130,7 @@ function Proposal({ id }: { id: string }) {
   }
   if (data === undefined) return <PageLoading eyebrow={`Proposal ${id}`} />;
 
-  const name = data.number === undefined ? data.id : `#${data.number}`;
+  const name = data.ref ?? data.id;
   const after = data.checksRun === "after-approval";
   // Checks that run after an approval are the deployer's: nothing to override.
   const passing = after || data.checks.state === "passing";
@@ -216,7 +216,12 @@ function Proposal({ id }: { id: string }) {
         </p>
       )}
       {data.state === "open" && data.mergeable === false && (
-        <p className="rounded-card bg-orange-tint px-3 py-2.5 text-[13px] text-orange">It cannot be merged as it is ({data.mergeableState}): ask the agent to bring it up to date.</p>
+        <p className="rounded-card bg-orange-tint px-3 py-2.5 text-[13px] text-orange">
+          It cannot be merged as it is{data.mergeDetail !== undefined && ` (${data.mergeDetail})`}: ask the agent to bring it up to date.
+        </p>
+      )}
+      {data.state === "open" && data.mergeable !== false && data.mergeDetail !== undefined && (
+        <p className="rounded-card bg-inset px-3 py-2.5 text-[13px] text-ink-2">Merging: {data.mergeDetail}.</p>
       )}
       {data.deploy !== undefined && (
         <p className={`rounded-card px-3 py-2.5 text-[13px] ${data.deploy.outcome === "deployed" ? "bg-green-tint text-green" : data.deploy.outcome === "rolled back" || data.deploy.outcome === "failed" ? "bg-red-tint text-red" : "bg-orange-tint text-orange"}`}>

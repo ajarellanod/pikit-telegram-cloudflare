@@ -67,6 +67,9 @@ for (const c of createProposalsConformance(() => {
     async other(branch) {
       github.addBranch(branch, hex(commits++), "Not a proposal");
     },
+    async failChecks(_id, head) {
+      github.setChecks(head, [{ name: "checks", status: "completed", conclusion: "failure" }]);
+    },
     dispose: () => github.stop(),
   };
 })) {
@@ -94,13 +97,13 @@ async function started(options: { github?: FakeGitHub; repository?: string | nul
   return { github, app, proposals, ctx, logged, access };
 }
 
-/** What `work` rejected with: its code and status, or `ok`. */
-async function failure(work: Promise<unknown>): Promise<[string, number] | "ok"> {
+/** What `work` rejected with: its code, or `ok`. */
+async function failure(work: Promise<unknown>): Promise<string> {
   try {
     await work;
     return "ok";
   } catch (error) {
-    if (error instanceof ProposalsError) return [error.code, error.status];
+    if (error instanceof ProposalsError) return error.code;
     throw error;
   }
 }
@@ -121,7 +124,7 @@ test("dormant until GitHub is connected: every call but status is not_connected,
       () => undefined,
       (thrown: unknown) => thrown,
     )) as ProposalsError | undefined;
-    expect([error?.code, error?.status]).toEqual(["not_connected", 503]);
+    expect(error?.code).toBe("not_connected");
     expect(error?.message).toContain("Settings → GitHub");
   }
   expect(await proposals.remote(ctx)).toBeUndefined();
@@ -141,20 +144,23 @@ test("the token is github's, asked for every call and never kept; github's own f
   await proposals.list(ctx);
   expect(access.asked).toBe(2);
   access.token = "rotated-token";
-  expect(await failure(proposals.list(ctx))).toEqual(["unauthorized", 502]);
+  expect(await failure(proposals.list(ctx))).toBe("unauthorized");
   access.failing = "the installation's token could not be made";
   const error = (await proposals.list(ctx).catch((thrown: unknown) => thrown)) as ProposalsError;
-  expect([error.code, error.status, error.message]).toEqual(["unavailable", 502, "GitHub's access failed: the installation's token could not be made"]);
+  expect([error.code, error.message]).toEqual(["unavailable", "GitHub's access failed: the installation's token could not be made"]);
   await app.stop();
 });
 
-test("remote: the repository's clone URL, authorized with github's token by trusted code", async () => {
-  const { github, proposals, ctx, app } = await started();
+test("remote: the repository's clone URL, authorized with github's token by trusted code; a token it cannot have rejects, saying why", async () => {
+  const { github, proposals, ctx, app, access } = await started();
   const remote = await proposals.remote(ctx);
   if (remote?.kind !== "https") throw new Error("an https remote");
   expect(remote).toMatchObject({ url: "https://github.com/ana/bot.git", branchPrefix: "pikit/self/", mainBranch: "main" });
   expect(await remote.authorization()).toBe(`Basic ${btoa(`x-access-token:${github.mergeToken}`)}`);
   expect(JSON.stringify(remote)).not.toContain(github.mergeToken);
+  access.failing = "the installation's token could not be made";
+  const error = (await remote.authorization().catch((thrown: unknown) => thrown)) as ProposalsError;
+  expect([error.code, error.message]).toEqual(["unavailable", "GitHub's access failed: the installation's token could not be made"]);
   await app.stop();
 });
 
@@ -220,7 +226,7 @@ test("the list: open proposals with their checks and preview, then the closed on
   ]);
   expect(list.proposals[0]).toMatchObject({
     id: "calendar",
-    number: 1,
+    ref: "#1",
     title: "A calendar tool",
     author: "pikit-agent",
     branch: "pikit/self/calendar",
@@ -228,6 +234,7 @@ test("the list: open proposals with their checks and preview, then the closed on
     previewUrl: "https://8a3b2c1d-pikit-bot.ana.workers.dev",
     checks: { state: "passing", passed: 2, failed: 0, pending: 0 },
   });
+  expect(list.proposals[0]?.draft).toBeUndefined();
   expect(list.proposals[1]?.checks).toBeUndefined();
   // With github's token.
   expect(new Set(github.requests.map((request) => request.token))).toEqual(new Set([github.mergeToken]));
@@ -277,13 +284,12 @@ test("a proposal: the description, files with bounded patches, checks, mergeable
   const detail = await proposals.get("calendar", ctx);
   expect(detail).toMatchObject({
     id: "calendar",
-    number: 7,
+    ref: "#7",
     body: "Adds **a calendar tool**.\n\nTests: `bun test` passes.",
     base: "main",
     defaultBranch: "main",
     head: SHA,
     mergeable: true,
-    mergeableState: "clean",
     changedFiles: 3,
     previewUrl: "https://pikit-calendar-pikit-bot.ana.workers.dev",
     checks: { state: "pending", passed: 1, pending: 1, failed: 0 },
@@ -295,10 +301,14 @@ test("a proposal: the description, files with bounded patches, checks, mergeable
   ]);
   expect(detail.files[1]?.patch?.length).toBe(MAX_PATCH);
   expect(detail.files[2]?.patch).toBeUndefined();
+  expect(detail.mergeDetail).toBeUndefined();
+  // GitHub's mergeable state in plain words, its draft as `draft`.
+  Object.assign(github.pull(7) ?? {}, { mergeable: false, mergeable_state: "dirty", draft: true });
+  expect(await proposals.get("calendar", ctx)).toMatchObject({ mergeable: false, mergeDetail: "conflicts with main", draft: true });
 
-  expect(await failure(proposals.get("main-fix", ctx))).toEqual(["not_found", 404]);
-  expect(await failure(proposals.get("nothing", ctx))).toEqual(["not_found", 404]);
-  expect(await failure(proposals.get("../main", ctx))).toEqual(["not_found", 404]);
+  expect(await failure(proposals.get("main-fix", ctx))).toBe("not_found");
+  expect(await failure(proposals.get("nothing", ctx))).toBe("not_found");
+  expect(await failure(proposals.get("../main", ctx))).toBe("not_found");
   await app.stop();
 });
 
@@ -393,25 +403,25 @@ test("reject closes the proposal with the operator's comment", async () => {
   await app.stop();
 });
 
-test("GitHub's errors: a rate limit is 429 with retry-after, a refused token or GitHub down 502, never a token", async () => {
+test("GitHub's errors: a rate limit is rate_limited with retryAfter, a refused token unauthorized, GitHub down unavailable, never a token", async () => {
   const { github, proposals, ctx, app } = await started();
   github.failWith = "rate_limit";
   const limited = await proposals.list(ctx).catch((error: unknown) => error as ProposalsError);
-  expect([(limited as ProposalsError).code, (limited as ProposalsError).status]).toEqual(["rate_limited", 429]);
+  expect((limited as ProposalsError).code).toBe("rate_limited");
   expect((limited as ProposalsError).retryAfter).toBeGreaterThan(60);
 
   github.failWith = "secondary_rate_limit";
   const secondary = await proposals.get("a", ctx).catch((error: unknown) => error as ProposalsError);
-  expect([(secondary as ProposalsError).status, (secondary as ProposalsError).retryAfter]).toEqual([429, 30]);
+  expect([(secondary as ProposalsError).code, (secondary as ProposalsError).retryAfter]).toEqual(["rate_limited", 30]);
 
   github.failWith = "down";
-  expect(await failure(proposals.list(ctx))).toEqual(["unavailable", 502]);
+  expect(await failure(proposals.list(ctx))).toBe("unavailable");
   github.failWith = undefined;
   await app.stop();
 
   const wrong = await started({ token: "expired-token" });
   const refused = await wrong.proposals.list(wrong.ctx).catch((error: unknown) => error as ProposalsError);
-  expect([(refused as ProposalsError).code, (refused as ProposalsError).status]).toEqual(["unauthorized", 502]);
+  expect((refused as ProposalsError).code).toBe("unauthorized");
   expect((refused as ProposalsError).message).not.toContain("expired-token");
   await wrong.app.stop();
 });
@@ -422,7 +432,7 @@ test("a token GitHub lets read but not merge: its 403 is forbidden, and nothing 
   github.addPull({ number: 2, branch: "pikit/self/b", sha: SHA });
   github.setChecks(SHA, [{ name: "checks", status: "completed", conclusion: "success" }]);
   const error = await proposals.approve("b", { operator: OPERATOR }, ctx).catch((thrown: unknown) => thrown as ProposalsError);
-  expect([(error as ProposalsError).code, (error as ProposalsError).status]).toEqual(["forbidden", 502]);
+  expect((error as ProposalsError).code).toBe("forbidden");
   expect((error as ProposalsError).message).toContain("GitHub's token");
   expect(github.pull(2)?.state).toBe("open");
   await app.stop();

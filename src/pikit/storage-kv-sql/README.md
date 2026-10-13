@@ -13,7 +13,8 @@ pikit add storage-kv-sql
 
 ## Using it
 
-A component opens the namespace named after it, and never sees another's keys:
+A component opens the namespace named after it (`pikit registry validate` checks it), and never
+sees another's keys:
 
 ```ts
 const kv = pikit.useOptional("storage.kv");   // or pikit.use, when it cannot work without it

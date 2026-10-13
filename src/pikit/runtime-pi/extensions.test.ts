@@ -39,7 +39,7 @@ const note = defineTool({
   execute: async (args: { item: string }, api, context) => {
     const key = context.value(CONVERSATION)?.key ?? "no conversation";
     await api.commit(async (tx) => void (await tx.doc(Notes, api.conversationId)).items.push(`${key}: ${args.item}`), context);
-    return { content: [{ type: "text", text: "noted" }] };
+    return { output: [{ type: "text", text: "noted" }] };
   },
 });
 

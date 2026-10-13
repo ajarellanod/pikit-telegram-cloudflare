@@ -3,7 +3,7 @@
 The agents that name it know what they are: a system prompt section with how pikit works, how each
 part of them is changed and where the docs are, and what runs now, read from the running App.
 
-It is SPEC §6's self-knowledge (`features/self-improvement.md`, piece 1). It has no tool: how the
+It is SPEC §6's self-knowledge ([features/self-improvement.md](https://github.com/ajarellanod/pikit/blob/main/features/self-improvement.md), piece 1). It has no tool: how the
 agent is doing (health, deliveries, proposals) is the operator's, in the dashboard.
 
 - **Provides:** `agent.extension`, under the key `pikit-self`.

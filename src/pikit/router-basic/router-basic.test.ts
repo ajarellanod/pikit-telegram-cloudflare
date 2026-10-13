@@ -22,8 +22,6 @@ const message: InboundMessage = {
   conversationId: "c1",
   actor: { id: "someone" },
   text: "hello",
-  raw: {},
-  receivedAt: 0,
 };
 
 const config = { "router-basic": { defaultAgent: "assistant" } };
@@ -92,7 +90,10 @@ test("defaultAgent is required", () => {
   expect(() => defineApp({ components: [agents, routerBasic], logger: silentLogger })).toThrow("invalid config");
 });
 
-/** `settings` in memory, validating against what was declared (settings-store passes the contract's suite on its own). */
+/**
+ * `settings` in memory (settings-store passes the contract's suite on its own), and `set`, an operator's
+ * change, validated against what was declared as settings-store's routes validate it.
+ */
 function memorySettings() {
   const stored = new Map<string, SettingsValue>();
   const declared = new Map<string, { schema: object; defaults: SettingsValue }>();
@@ -103,16 +104,14 @@ function memorySettings() {
       if (found === undefined) throw new SettingsError("unknown_component", component);
       return { ...found.defaults, ...stored.get(component) } as T;
     },
-    async set(component, value) {
-      const found = declared.get(component);
-      if (found === undefined) throw new SettingsError("unknown_component", component);
-      if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new SettingsError("invalid_value", component);
-      stored.set(component, value);
-      return value;
-    },
-    sections: async () => [],
   };
-  return { provider, stored, component: defineComponent({ name: "settings-test", setup: (pikit) => pikit.provide("settings", provider) }) };
+  const set = async (component: string, value: SettingsValue) => {
+    const found = declared.get(component);
+    if (found === undefined) throw new SettingsError("unknown_component", component);
+    if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new Error(`settings-test: the schema refuses ${component}'s value`);
+    stored.set(component, value);
+  };
+  return { provider, stored, set, component: defineComponent({ name: "settings-test", setup: (pikit) => pikit.provide("settings", provider) }) };
 }
 
 test("with settings, the default agent an operator sets answers the next message; its default is defaultAgent", async () => {
@@ -122,10 +121,10 @@ test("with settings, the default agent an operator sets answers the next message
   const ctx = app.context();
 
   expect(await settings.provider.get("router-basic", ctx)).toEqual({ defaultAgent: "assistant" });
-  await settings.provider.set("router-basic", { defaultAgent: "billing" }, { id: "ops" }, ctx);
+  await settings.set("router-basic", { defaultAgent: "billing" });
   expect(await ctx.run("route.resolve", { message })).toEqual({ message, decision: { agent: "billing", access: "allow" } });
   // Only the App's agents may be set.
-  await expect(settings.provider.set("router-basic", { defaultAgent: "nobody" }, { id: "ops" }, ctx)).rejects.toThrow(SettingsError);
+  await expect(settings.set("router-basic", { defaultAgent: "nobody" })).rejects.toThrow("the schema refuses");
   await app.stop();
 });
 

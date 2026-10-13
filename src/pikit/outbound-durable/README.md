@@ -30,6 +30,7 @@ guarantees, and how they differ (receipts here; retries that never give up there
   | rate limited | waits what the platform asked; not counted as a failure |
   | permanent (bot blocked, chat gone) | abandoned at once |
   | anything, after 24 hours | abandoned |
+  | nothing: its channel has no transport (stopped, or removed from the project) | waits for one; abandoned after 24 hours |
 
   An abandoned piece is logged as an error, emits `outbound.abandoned` and gets a receipt.
 - **Woken by `wakeups`.** Sends and retries run in the handler it registers with `wakeups`
@@ -53,7 +54,7 @@ guarantees, and how they differ (receipts here; retries that never give up there
 ## Receipts: for what must not miss a delivery
 
 Every piece that settles, delivered or abandoned, gets one receipt, written in the same transaction
-as its new state (`outbound_receipts`). Components that must not miss a delivery read them through
+as its new state (`outbound_durable_receipts`). Components that must not miss a delivery read them through
 `outbound.queue`'s `receipts`, a feed (`Feed`, SPEC K3), from a cursor of their own. A decision bound to the
 message that carries it, a reply that quotes an answer, an alert on an abandoned one: each reads
 the receipts when it starts and whenever `outbound.delivered` wakes it, so a crash only delays it.
@@ -90,22 +91,22 @@ do {
 } while (cursor !== undefined);
 ```
 
-It reads `outbound_pieces` as it is now: a piece that settles while you page is in `receipts` instead.
+It reads `outbound_durable_pieces` as it is now: a piece that settles while you page is in `receipts` instead.
 On Cloudflare each conversation's Durable Object holds its own outbox, and lists only its own pieces.
 
 ## Schema versions
 
-The tables carry a schema version (`outbound_meta`), so a later version of this component can add
+The tables carry a schema version (`outbound_durable_meta`), so a later version of this component can add
 what it needs to a database that already exists; a database written by a newer one is refused at
 start.
 
 ## Seeing what happened
 
 `pending` and `receipts` are the way in for code. By hand, everything is in the table
-`outbound_pieces` of the database (`.pikit/pikit.db`):
+`outbound_durable_pieces` of the database (`.pikit/pikit.db`):
 
 ```sh
-sqlite3 .pikit/pikit.db "SELECT key, state, attempts, last_error FROM outbound_pieces WHERE state != 'delivered'"
+sqlite3 .pikit/pikit.db "SELECT key, state, attempts, last_error FROM outbound_durable_pieces WHERE state != 'delivered'"
 ```
 
 Delivered pieces are kept 7 days, abandoned ones 30, with their reason. Each delivery emits
@@ -122,6 +123,9 @@ Delivered pieces are kept 7 days, abandoned ones 30, with their reason. Each del
 ```
 
 ## Removing it
+
+Removing a channel instead leaves its pending pieces here with no transport: they are abandoned
+(with a receipt and `outbound.abandoned`) once 24 hours old, without a new message.
 
 `pikit remove outbound-durable`: channels send directly again. Pieces still pending in the table are
 not sent by anyone; empty the table first if that matters.

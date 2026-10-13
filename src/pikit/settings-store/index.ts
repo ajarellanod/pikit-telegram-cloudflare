@@ -10,10 +10,12 @@
  *   stored key a deploy made invalid takes its default, logged.
  * - **Logged** with the operator and the component, never the value.
  *
- * Targets: `server` and `durable`.
- * - **On a server** this export is everything: the App's own table, read at every `get` (one query),
- *   and the routes.
- * - **On Cloudflare** it goes in each conversation's Durable Object (the default App). The values are
+ * Targets: `server` and `durable`. It never reads the target: in `start`, `actor.inbox`'s `scope` says
+ * where the values live.
+ * - **Every key's actor** (`"all"`, a server; or no `actor.inbox`): this export is everything, the
+ *   App's own table, read at every `get` (one query), and the routes.
+ * - **One key's actor** (`"one"`: on Cloudflare, each conversation's Durable Object, the default
+ *   App). The values are
  *   one object's, `settings-store:settings` (`SETTINGS_KEY`, `calls.ts`), of the conversations' class,
  *   never a conversation, which answers the calls every object can answer. A conversation's object
  *   reads it when used, keeping what it read with its version, asked again at most every second: one
@@ -28,7 +30,7 @@ import type { Settings } from "@pikit/contracts";
 import Type from "typebox";
 import { answerCalls, createRemoteSettings, FRESH_MS } from "./calls.ts";
 import { provideRoutes } from "./routes.ts";
-import { createDeclarations, createSettings } from "./settings.ts";
+import { createDeclarations, createSettings, type SettingsStore } from "./settings.ts";
 import { createSettingsTable } from "./table.ts";
 
 export { worker, WORKER_NAME } from "./worker.ts";
@@ -48,27 +50,40 @@ export default defineComponent({
     const sql = pikit.use("storage.sql");
     // Its routes answer operators only; without a provider, nobody.
     const auth = pikit.useOptional("admin.auth");
-    // On Cloudflare (`durable`): the settings object's calls, and reading it.
+    // Whose actor this App is (`scope`); where it is one key's: the settings object's calls, and reading it.
     const inbox = pikit.useOptional("actor.inbox");
     const mailbox = pikit.useOptional("actor.mailbox");
-    const durable = pikit.target === "durable";
 
     const declarations = createDeclarations();
     const table = createSettingsTable(() => sql.get(), () => pikit.clock.now());
     // The App's settings over its own table: a server's, and what the settings object answers with.
     const local = createSettings(declarations, table);
-    const provided: Settings = durable ? createRemoteSettings(declarations, () => mailbox.get(), pikit.clock, config.freshMs) : local;
+    const remote = createRemoteSettings(declarations, () => mailbox.get(), pikit.clock, config.freshMs);
+    // Chosen in start, by the inbox's scope; the components that use `settings` start after.
+    let chosen: (Settings & SettingsStore) | undefined;
+    const current = (): Settings & SettingsStore => {
+      if (chosen === undefined) throw new Error("settings-store: settings used before the App started; use it from start or later");
+      return chosen;
+    };
+    const provided: Settings = {
+      declare: (component, schema, defaults) => current().declare(component, schema, defaults),
+      get: (component, ctx) => current().get(component, ctx),
+    };
     pikit.provide("settings", provided);
-    provideRoutes(pikit, { auth, settings: () => provided });
+    // The operator side is the routes' only: components declare and read.
+    provideRoutes(pikit, { auth, store: current });
 
     return {
       start() {
-        if (!durable) return;
         const calls = inbox.get();
-        const missing = [calls === undefined && "actor.inbox", mailbox.get() === undefined && "actor.mailbox"].filter(Boolean);
-        if (calls === undefined || missing.length > 0) {
-          throw new Error(`settings-store: in a Durable Object's App it reads and answers the settings object, which needs ${missing.join(", ")}: install platform-cloudflare`);
+        // Every key's actor (a server, or no actors at all): the values are its own table's.
+        if (calls === undefined || calls.scope === "all") {
+          chosen = local;
+          return;
         }
+        // One key's (a Durable Object): the settings object's, which may be this one.
+        if (mailbox.get() === undefined) throw new Error("settings-store: in an App that is one key's actor it reads the settings object, which needs actor.mailbox");
+        chosen = remote;
         answerCalls(calls, table, local);
       },
     };

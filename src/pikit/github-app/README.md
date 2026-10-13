@@ -5,8 +5,9 @@ created in your own account (GitHub's [App Manifest
 flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)) and
 installed on the bot's repository. The app then mints its own short-lived installation tokens for that
 repository: nothing is pasted into Cloudflare, and the agent never holds a token. It is what
-self-improvement (SPEC §6, `features/self-improvement.md`) uses on Cloudflare: the agent's `git`
-(execution-do) and the proposals' GitHub calls.
+self-improvement (SPEC §6, [features/self-improvement.md](https://github.com/ajarellanod/pikit/blob/main/features/self-improvement.md)) uses on Cloudflare: the proposals' GitHub
+calls (proposals-github), and the credential of their `remote()`, which the agent's `git` (execution-do)
+pushes to.
 
 - **Provides:** `github` (`@pikit/contracts`' github.ts): the connected repository and a token for it,
   in both Apps; `http.route` (the Worker's half): the routes below.

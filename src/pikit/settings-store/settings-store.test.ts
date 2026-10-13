@@ -1,8 +1,9 @@
 /**
  * settings-store's tests. They are copied with the component and keep running in your project: the
  * `settings` conformance suite on both targets (a server's table; on Cloudflare an object's App reading
- * the settings object through calls, a double of the platform's), the admin routes, and what an
- * object's cache spends in calls.
+ * the settings object through calls, a double of the platform's), its operator side through the admin
+ * routes (what a change answers, refuses, lists and logs) on both, and what an object's cache spends
+ * in calls.
  */
 
 import { afterEach, expect, test } from "bun:test";
@@ -20,22 +21,56 @@ import {
   matchesHttpRoute,
   parseHttpRouteKey,
   type Settings,
-  type SettingsSection,
+  type SettingsSchema,
+  type SettingsValue,
 } from "@pikit/contracts";
-import { createSettingsConformance } from "@pikit/contracts/testing";
+import { createSettingsConformance, type SettingsFixtureApp } from "@pikit/contracts/testing";
 import { createManualClock } from "@pikit/core/testing";
 import { sqliteStorage } from "@pikit/pi-adapter/testing";
 import Type from "typebox";
 import { CALL, SETTINGS_KEY } from "./calls.ts";
 import settingsStore, { worker } from "./index.ts";
 import { MAX_BODY } from "./routes.ts";
+import { createDeclarations, createSettings, type SettingsSection } from "./settings.ts";
 
 const copy = (value: JsonValue): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue;
+
+const AUTH = { authorization: "Bearer operator-token" };
+const auth = defineComponent({
+  name: "auth-test",
+  setup(pikit) {
+    const provider: AdminAuth = { verify: async (request) => (request.headers.get("authorization") === AUTH.authorization ? { id: "ops" } : undefined) };
+    pikit.provide("admin.auth", provider);
+  },
+});
+
+const put = (value: unknown): RequestInit => ({ method: "PUT", headers: { ...AUTH, "content-type": "application/json" }, body: JSON.stringify(value) });
+
+/** One App of a suite case: `components`, and an operator who changes a value through settings-store's PUT route, as the dashboard does. */
+function operated(components: ComponentDefinition[]): SettingsFixtureApp {
+  let routes: { get(key: string): HttpRoute | undefined } | undefined;
+  const server = defineComponent({
+    name: "operator-test",
+    setup(pikit) {
+      const handle = pikit.useKeyed("http.route");
+      return { start: () => void (routes = handle) };
+    },
+  });
+  return {
+    components: [...components, auth, server],
+    async operate(component, value, ctx) {
+      const route = routes?.get("PUT /admin/api/settings/:component");
+      if (route === undefined) throw new Error("settings-store's PUT route is not served");
+      const response = await route(new Request(`http://pikit.test/admin/api/settings/${encodeURIComponent(component)}`, put(value)), ctx);
+      if (!response.ok) throw new Error(`settings-store's PUT answered ${response.status}: ${await response.text()}`);
+    },
+  };
+}
 
 // On a server: the App's own table.
 for (const c of createSettingsConformance(() => {
   const storage = sqliteStorage();
-  return { components: () => [storage, settingsStore] };
+  return { app: () => operated([storage, settingsStore]) };
 })) {
   test(`settings-store (server) ${c.group}: ${c.name}`, () => c.run());
 }
@@ -71,7 +106,7 @@ class Objects {
     return defineComponent({
       name: "platform-test",
       setup(pikit) {
-        pikit.provide("actor.inbox", { handle: () => {}, answer: (type, handler) => void answers.set(type, handler) });
+        pikit.provide("actor.inbox", { scope: "one", handle: () => {}, answer: (type, handler) => void answers.set(type, handler) });
         pikit.provide("actor.mailbox", objects.mailbox);
         let entry: (typeof objects.live)[number] | undefined;
         return {
@@ -95,7 +130,7 @@ for (const c of createSettingsConformance(() => {
   const storage = sqliteStorage();
   const objects = new Objects();
   return {
-    components: () => [storage, objects.platform(), settingsStore],
+    app: () => operated([storage, objects.platform(), settingsStore]),
     config: { "settings-store": { freshMs: 0 } },
     target: "durable" as Target,
   };
@@ -103,22 +138,16 @@ for (const c of createSettingsConformance(() => {
   test(`settings-store (durable) ${c.group}: ${c.name}`, () => c.run());
 }
 
-const AUTH = { authorization: "Bearer operator-token" };
-const auth = defineComponent({
-  name: "auth-test",
-  setup(pikit) {
-    const provider: AdminAuth = { verify: async (request) => (request.headers.get("authorization") === AUTH.authorization ? { id: "ops" } : undefined) };
-    pikit.provide("admin.auth", provider);
-  },
-});
-
 const AGENT = Type.Object({
   model: Type.Union([Type.Literal("faux/small"), Type.Literal("faux/large")], { title: "Model" }),
   prompt: Type.String({ title: "System prompt" }),
 });
 
-/** A component that declares its settings in start, as one does, and keeps the handle. */
-function declarer(holder: { settings?: Settings }): ComponentDefinition {
+type Declarations = Record<string, { schema: SettingsSchema; defaults: SettingsValue }>;
+const AGENT_ONLY: Declarations = { agent: { schema: AGENT, defaults: { model: "faux/small", prompt: "Be brief." } } };
+
+/** A component that declares its settings (`agent`'s by default) in start, as one does, and keeps the handle. */
+function declarer(holder: { settings?: Settings }, declarations: Declarations = AGENT_ONLY): ComponentDefinition {
   return defineComponent({
     name: "declarer-test",
     setup(pikit) {
@@ -126,7 +155,7 @@ function declarer(holder: { settings?: Settings }): ComponentDefinition {
       return {
         start() {
           holder.settings = handle.get();
-          holder.settings.declare("agent", AGENT, { model: "faux/small", prompt: "Be brief." });
+          for (const [component, { schema, defaults }] of Object.entries(declarations)) holder.settings.declare(component, schema, defaults);
         },
       };
     },
@@ -181,8 +210,6 @@ async function serve(components: ComponentDefinition[], options: { target?: Targ
   };
 }
 
-const put = (value: unknown): RequestInit => ({ method: "PUT", headers: { ...AUTH, "content-type": "application/json" }, body: JSON.stringify(value) });
-
 test("what setup declares: component.json's provides / requires / optional come from it", async () => {
   const mailbox = defineComponent({ name: "mailbox-test", setup: (pikit) => pikit.provide("actor.mailbox", new Objects().mailbox) });
   const objectApp = await defineApp({ components: [sqliteStorage(), settingsStore], logger: silentLogger }).create();
@@ -190,6 +217,93 @@ test("what setup declares: component.json's provides / requires / optional come 
 
   expect(objectApp.describe().components.slice(1)).toEqual([{ name: "settings-store", provides: ["settings", "http.route"], requires: ["storage.sql"], optional: ["admin.auth", "actor.inbox", "actor.mailbox"] }]);
   expect(workerApp.describe().components.slice(1)).toEqual([{ name: "settings-store-worker", provides: ["settings", "http.route"], requires: ["actor.mailbox"], optional: ["admin.auth"] }]);
+});
+
+// The store's operator side (`SettingsStore`), through its routes, on both targets: what the
+// `settings` contract leaves to its provider. Components see `declare` and `get` only.
+const MODE = Type.Object(
+  { mode: Type.Union([Type.Literal("calm"), Type.Literal("busy")], { title: "Mode" }), prompt: Type.String(), limit: Type.Integer({ minimum: 1 }) },
+  { additionalProperties: false },
+);
+const MODE_DEFAULTS = { mode: "calm", prompt: "Be brief.", limit: 3 };
+const OTHER = Type.Object({ on: Type.Boolean() }, { additionalProperties: false });
+const BOTH: Declarations = { alpha: { schema: MODE, defaults: MODE_DEFAULTS }, beta: { schema: OTHER, defaults: { on: false } } };
+const MARKER = "never-in-a-log-7f3a";
+
+for (const target of ["server", "durable"] as const) {
+  /** An App with `BOTH` declared, served; on `durable`, an object's App that is also the settings object. */
+  const operatorApp = async () => {
+    const holder: { settings?: Settings } = {};
+    const platform = target === "durable" ? [new Objects().platform()] : [];
+    const served = await serve([sqliteStorage(), auth, ...platform, settingsStore, declarer(holder, BOTH)], {
+      target,
+      ...(target === "durable" && { config: { "settings-store": { freshMs: 0 } } }),
+    });
+    const settings = holder.settings as Settings;
+    const changed = async (component: string, value: unknown) => {
+      const response = await served.fetch(`/admin/api/settings/${component}`, put(value));
+      return { status: response.status, body: (await response.json()) as SettingsSection & { error?: string; message?: string } };
+    };
+    return { served, settings, changed, ctx: served.app.context() };
+  };
+
+  test(`settings-store (${target}) gives components declare and get only`, async () => {
+    const { settings } = await operatorApp();
+    expect(Object.keys(settings).sort()).toEqual(["declare", "get"]);
+  });
+
+  test(`settings-store (${target}) set answers the value get now gives, the whole value over the defaults`, async () => {
+    const { settings, changed, ctx } = await operatorApp();
+    const first = await changed("alpha", { mode: "busy", prompt: "Be thorough." });
+    expect([first.status, first.body.value]).toEqual([200, { mode: "busy", prompt: "Be thorough.", limit: 3 }]);
+    expect((await changed("alpha", { limit: 9 })).body.value).toEqual({ mode: "calm", prompt: "Be brief.", limit: 9 });
+    expect(await settings.get("alpha", ctx)).toEqual({ mode: "calm", prompt: "Be brief.", limit: 9 });
+  });
+
+  test(`settings-store (${target}) a value the schema refuses is invalid_value and stores nothing; an undeclared component is unknown_component`, async () => {
+    const { settings, changed, ctx } = await operatorApp();
+    await changed("alpha", { mode: "busy" });
+    for (const value of [{ mode: "loud" }, { limit: 0 }, { mode: "busy", extra: 1 }]) {
+      const refused = await changed("alpha", value);
+      expect([refused.status, refused.body.error]).toEqual([400, "invalid_value"]);
+      // Where it is wrong, never what it is.
+      expect(refused.body.message).not.toContain("loud");
+    }
+    expect(await settings.get("alpha", ctx)).toEqual({ mode: "busy", prompt: "Be brief.", limit: 3 });
+    const unknown = await changed("gamma", { on: true });
+    expect([unknown.status, unknown.body.error]).toEqual([404, "unknown_component"]);
+  });
+
+  test(`settings-store (${target}) sections lists every declared component by name, with its schema, defaults and value`, async () => {
+    const { served, changed } = await operatorApp();
+    await changed("beta", { on: true });
+    const listed = (await (await served.fetch("/admin/api/settings", { headers: AUTH })).json()) as { items: SettingsSection[] };
+    expect(listed.items).toEqual([
+      { component: "alpha", schema: copy(MODE as unknown as JsonValue) as object, defaults: MODE_DEFAULTS, value: MODE_DEFAULTS },
+      { component: "beta", schema: copy(OTHER as unknown as JsonValue) as object, defaults: { on: false }, value: { on: true } },
+    ]);
+  });
+
+  test(`settings-store (${target}) a change is logged with the operator and the component, never the value`, async () => {
+    const { served, changed } = await operatorApp();
+    expect((await changed("alpha", { prompt: MARKER })).status).toBe(200);
+    expect(served.logged).toContainEqual({ message: "settings-store: settings changed", fields: { component: "alpha", operator: "ops", keys: ["prompt"] } });
+    expect(JSON.stringify(served.logged)).not.toContain(MARKER);
+  });
+}
+
+test("the store's answers are copies: changing one changes nothing stored", async () => {
+  const declarations = createDeclarations();
+  declarations.declare("alpha", MODE, MODE_DEFAULTS);
+  const values: Record<string, SettingsValue> = {};
+  const store = createSettings(declarations, { read: async () => values, write: async (component, value) => void (values[component] = value) });
+  const ctx = { logger: silentLogger } as unknown as AppContext;
+  const answered = (await store.set("alpha", { mode: "busy" }, { id: "ops" }, ctx)) as Record<string, unknown>;
+  answered.mode = "calm";
+  const [section] = await store.sections(ctx);
+  (section?.value as Record<string, unknown>).limit = 100;
+  (section?.defaults as Record<string, unknown>).limit = 100;
+  expect(await store.sections(ctx)).toEqual([{ component: "alpha", schema: copy(MODE as unknown as JsonValue) as object, defaults: MODE_DEFAULTS, value: { mode: "busy", prompt: "Be brief.", limit: 3 } }]);
 });
 
 test("the routes answer an operator only: 401 without the credential, and without an admin.auth", async () => {
@@ -259,7 +373,7 @@ test("on Cloudflare the Worker's routes are calls to the settings object, which 
   expect(unreachable.status).toBe(503);
 });
 
-test("on Cloudflare the Worker's App reads its components' settings from the settings object too, and sets them there", async () => {
+test("on Cloudflare the Worker's App reads its components' settings from the settings object too, and gives them declare and get only", async () => {
   const objects = new Objects();
   const clock = createManualClock();
   const inObject: { settings?: Settings } = {};
@@ -274,11 +388,9 @@ test("on Cloudflare the Worker's App reads its components' settings from the set
   expect((await workerApp.fetch("/admin/api/settings/agent", put({ model: "faux/large" }))).status).toBe(200);
   await clock.advance(1_000);
   expect(await settings.get("agent", workerApp.app.context())).toEqual({ model: "faux/large", prompt: "Be brief." });
-  // Its own set goes to the settings object, and its next get asks again.
-  await settings.set("agent", { prompt: "Shorter." }, { id: "ops" }, workerApp.app.context());
-  expect(await settings.get("agent", workerApp.app.context())).toEqual({ model: "faux/small", prompt: "Shorter." });
-  expect(await inObject.settings?.get("agent", object.app.context())).toEqual({ model: "faux/small", prompt: "Shorter." });
-  await expect(settings.set("nobody", {}, { id: "ops" }, workerApp.app.context())).rejects.toThrow("declared no settings");
+  expect(await inObject.settings?.get("agent", object.app.context())).toEqual({ model: "faux/large", prompt: "Be brief." });
+  // The operator side is the routes': a component of the Worker's App declares and reads.
+  expect(Object.keys(settings).sort()).toEqual(["declare", "get"]);
 });
 
 test("an object asks the settings object at most once per freshMs, and only for what changed; unreachable, it keeps what it read", async () => {
@@ -287,7 +399,7 @@ test("an object asks the settings object at most once per freshMs, and only for 
   const holder: { settings?: Settings } = {};
   const logged: string[] = [];
   const logger: Logger = { ...silentLogger, warn: (message) => void logged.push(message) };
-  const served = await serve([sqliteStorage(), objects.platform(), settingsStore, declarer(holder)], { target: "durable", clock, logger });
+  const served = await serve([sqliteStorage(), auth, objects.platform(), settingsStore, declarer(holder)], { target: "durable", clock, logger });
   const settings = holder.settings as Settings;
   const ctx = served.app.context();
 
@@ -296,8 +408,8 @@ test("an object asks the settings object at most once per freshMs, and only for 
   expect(objects.calls).toEqual([`${SETTINGS_KEY} ${CALL.read}`]);
 
   await clock.advance(1_000);
-  await settings.set("agent", { prompt: "Shorter." }, { id: "ops" }, ctx);
-  // Its own set: the next get asks at once.
+  expect((await served.fetch("/admin/api/settings/agent", put({ prompt: "Shorter." }))).status).toBe(200);
+  // A change through its own routes: it reads again at once (the route's answer), and its next get answers from that.
   expect(await settings.get("agent", ctx)).toEqual({ model: "faux/small", prompt: "Shorter." });
   expect(objects.calls).toEqual([`${SETTINGS_KEY} ${CALL.read}`, `${SETTINGS_KEY} ${CALL.set}`, `${SETTINGS_KEY} ${CALL.read}`]);
 
@@ -316,12 +428,13 @@ test("an object that never read the settings object, which cannot be reached, re
   await expect(holder.settings?.get("agent", served.app.context()) as Promise<unknown>).rejects.toThrow("could not be reached");
 });
 
-test("in an object's App it needs actor.inbox and actor.mailbox; without them its start says so", async () => {
-  const app = await defineApp({ components: [sqliteStorage(), settingsStore], target: "durable", logger: silentLogger }).create();
+test("in an App that is one key's actor it needs actor.mailbox; without it its start says so", async () => {
+  const inbox = defineComponent({ name: "inbox-test", setup: (pikit) => pikit.provide("actor.inbox", { scope: "one", handle: () => {}, answer: () => {} }) });
+  const app = await defineApp({ components: [sqliteStorage(), inbox, settingsStore], logger: silentLogger }).create();
 
   const error = (await app.start().then(
     () => undefined,
     (thrown: unknown) => thrown,
   )) as { cause?: Error } | undefined;
-  expect(error?.cause?.message).toContain("needs actor.inbox, actor.mailbox: install platform-cloudflare");
+  expect(error?.cause?.message).toContain("reads the settings object, which needs actor.mailbox");
 });

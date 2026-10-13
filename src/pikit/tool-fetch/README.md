@@ -24,7 +24,7 @@ defineAgent({ name: "research", model: "openrouter/z-ai/glm-5.3-flash", tools: [
      parameters: Type.Object({ url: Type.String(), … }), // TypeBox: the Harness validates every call
      replay: "unsafe",                   // see below
      async execute(args, api, context) { // context.abortSignal: the call's cancellation
-       return { content: [{ type: "text", text }] }; // a throw is an error result the model reads
+       return { output: [{ type: "text", text }] }; // a throw is an error result the model reads
      },
    });
    ```

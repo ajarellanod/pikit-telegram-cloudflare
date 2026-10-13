@@ -1,6 +1,6 @@
 # admin-proposals
 
-The dashboard's side of the agent's changes to itself (SPEC §6, `features/self-improvement.md`):
+The dashboard's side of the agent's changes to itself (SPEC §6, [features/self-improvement.md](https://github.com/ajarellanod/pikit/blob/main/features/self-improvement.md)):
 its routes and its Proposals view list, show, approve and reject the proposals that `proposals`
 holds, and its Settings section shows whether they can be made and approved now. It is the same on
 every target: where proposals live and what approving does are the provider's.
@@ -50,10 +50,11 @@ asked. JSON, the contract's shapes (`api.ts`; the view keeps a copy, `view/types
 
 `:id` is the branch's topic (`pikit/self/<topic>`), its `/` encoded. A refusal is `409` (`not_open`,
 `moved`, `checks_failing`, `wrong_base`, `not_mergeable`), `404` for `not_found`; a body that is not
-one is `400 invalid_request`, a large one `413`. A provider's failure (`ProposalsError`) answers its
-own status: `503 not_connected` while it is not set up (the message says what to do), `429
-rate_limited` with `retry-after`, `502` when GitHub refuses or is down. Each approval and rejection is
-logged with the operator and the id.
+one is `400 invalid_request`, a large one `413`. A provider's failure (`ProposalsError`) answers with
+its code's status, from one table (`PROVIDER_STATUS`, `api.ts`): `503 not_connected` while it is not
+set up (the message says what to do), `429 rate_limited` with `retry-after`, `404 not_found`, `502`
+when where proposals live refuses or fails (`unauthorized`, `forbidden`, `missing_repository`,
+`unavailable`, `refused`). Each approval and rejection is logged with the operator and the id.
 
 ## The view
 
@@ -62,6 +63,8 @@ before (CI) and Approve with failing checks asks "anyway" (`override`); on a ser
 (the deployer), so Approve says the deployer merges, checks, deploys and rolls back. A proposal's page
 shows its description, its checks, its deploy (waiting, deploying, deployed, rolled back, failed), its
 diff file by file, and Approve / Reject behind a confirmation; Approve sends the head the page shows.
+What only some providers have shows when there: a proposal's `ref` (`#42`) beside its title, `draft`,
+`mergeDetail` (why it does or does not merge, in plain words) and a preview link.
 
 ## Security
 
@@ -70,7 +73,7 @@ GitHub's token (execution-do's git only pushes branches under the prefix), and a
 the default branch. On a server (`proposals-local`) an
 approval is the operator's decision, not a lock: the agent's shell runs in the app's container and
 could forge one; the deployer checks, waits for `/health` and rolls back whatever it deploys
-(proposals-local's README; `features/sandboxed-execution.md` for a real lock).
+(proposals-local's README; [features/sandboxed-execution.md](https://github.com/ajarellanod/pikit/blob/main/features/sandboxed-execution.md) for a real lock).
 
 ## Tests
 
@@ -78,7 +81,7 @@ could forge one; the deployer checks, waits for `/health` and rolls back whateve
 without `admin.auth`) and the provider never asked; status, list and a proposal passed through, a
 topic's `/` decoded; approve passing the head and the operator, its outcome as `200`, `409` or `404`,
 a malformed body refused before the provider; reject's comment trimmed and bounded; a provider's
-failure as its status, a rate limit with `retry-after`. The providers' own tests hold what each does.
+failure as its code's status, a rate limit with `retry-after`. The providers' own tests hold what each does.
 
 ## Remove it
 

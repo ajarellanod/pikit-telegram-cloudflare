@@ -58,7 +58,8 @@ with its admission:
   while that run goes is taken together by the **next run**, which starts once the run in progress
   ends: its `agent.started` names the first of them, and its one answer (`agent.settled`) lists them
   all in `requestIds`, so a channel that replies per message replies to each. A **steer**
-  (`dispatch({ ..., whenBusy: "steer" })`, a person correcting course, or the dashboard) joins the run
+  (`dispatch({ ..., whenBusy: "steer" })`, a person correcting course; no channel sends one yet, and
+  the dashboard never does: an operator's message is a follow-up, SPEC §5) joins the run
   in progress instead, after its current tool round, and that run's answer lists it in `requestIds`;
   if the run answers before another tool round, the steer gets the next run. A steer to an idle
   conversation starts a run, as any message does;
@@ -111,6 +112,15 @@ pi-durable keeps every message it admitted and how it ended; `agent.submissions`
   agent is no longer defined (`agent_removed`); and when resuming its conversation fails and its
   oldest pending message is older than `abandonPendingAfterHours`. Only messages still queued are
   abandoned: a run that took one settles it.
+- a **storage error** (the database unreachable, a failed write) closes pi-durable for good: the call
+  that hit it fails, and what was going stays pending in the storage, as after a crash. runtime-pi
+  opens pi-durable again without waiting for a message: on a server from a timer, with `wakeups` by
+  asking for one ("Cloudflare" below). It waits 1 s, doubled for each error in a row up to 5
+  minutes (`reopen.ts`); an open that works does not start the waits over (a storage that opens and
+  fails again at once would be opened every second), 10 minutes without an error do. On a server an
+  open that fails counts as one more error; with `wakeups` the handler rejects and the wakeups
+  provider runs it again. What it opens resumes as at start. A message that arrives first opens it at
+  once.
 
 ## Cloudflare: runs driven by wakeups, in slices
 
@@ -143,6 +153,11 @@ has work pending. The handler:
    (`onIdleWithPendingWork` and `nextWakeAtOf` in `@pikit/pi-adapter`), and the handler closes
    pi-durable inside its event (`suspend`) so the object can be evicted until then; the wakeup opens
    it again and the wait continues from its checkpoint.
+
+After a storage error closed pi-durable (the runtime's `onFailure`), runtime-pi asks for the handler
+after the backoff above; its step 1 opens pi-durable again, and what the failure left goes on. If the
+storage is still down, that open fails and the handler rejects: the wakeups provider runs it again
+after its own backoff (the `wakeups` contract never gives up).
 
 A request carries nothing: the handler reads what to do from pi-durable each time. So a handler that runs twice (delivery is at least once), late, or in a new object after an
 eviction does the right thing. An object evicted mid-run is started again by its alarm, and the run
@@ -234,7 +249,7 @@ or must see each model request or tool call is an extension.
 With `settings` installed (`settings-store`, installed with the dashboard), an operator changes an
 agent's **system prompt**, **model** (one an installed provider has) and **tools** (on or off, among
 those its definition names) from the dashboard's Settings, Agent (router-basic's section), with no
-deploy and no restart (features/settings.md). The definition still owns the agent (SPEC §6): the
+deploy and no restart ([features/settings.md](https://github.com/ajarellanod/pikit/blob/main/features/settings.md)). The definition still owns the agent (SPEC §6): the
 overrides are data over it (`overrides.ts`).
 
 - **Declared at start** as runtime-pi's settings: one optional object per agent, its schema built from

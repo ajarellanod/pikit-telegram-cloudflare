@@ -10,7 +10,8 @@ import { BACKGROUND_CONTEXT, defineApp, defineComponent, silentLogger, withConte
 import type { SqlDatabase } from "@pikit/contracts";
 import { WORKERS_HOST, type WorkersHost } from "@pikit/contracts/cloudflare";
 import { createLifecycleConformance } from "@pikit/core/testing";
-import { createSqlDatabaseConformance, withWorkersHost } from "@pikit/contracts/testing";
+import { createSqlDatabaseConformance } from "@pikit/contracts/testing";
+import { withWorkersHost } from "@pikit/contracts/cloudflare/testing";
 import storageDo from "./index.ts";
 import { fakeDurableObjectStorage, fakeObjectHost } from "./durable-object.test-support.ts";
 

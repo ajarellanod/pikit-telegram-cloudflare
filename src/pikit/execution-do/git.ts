@@ -8,19 +8,22 @@
  * proposals' provider shows the operator.
  *
  * The fences are code, not a prompt:
- * - **Push only to the connected repository, only branches under the prefix** (`pikit/self/` by
- *   default), never `main`. The connected repository is the `github` capability's (`repository`):
- *   none connected, nothing is pushed.
- * - **The token never reaches the shell.** It is asked for (`token`: `github`'s, for the connected
- *   repository) when a command needs it, and sent only to github.com for that repository: in the
- *   headers of git's requests and in `onAuth`. Other repositories are cloned without one (public only).
+ * - **Push only to where proposals go, only branches under its prefix**, never `main`. Where proposals
+ *   go is `proposals.remote()` (its URL and `branchPrefix`, read at each command): nothing there, nothing
+ *   is pushed. This file never knows which provider it is.
+ * - **The credential never reaches the shell.** It is asked for (the remote's `authorization()`) when a
+ *   command needs it, and sent only in the headers of git's requests to that remote. Other
+ *   repositories are cloned without one (public GitHub repositories only).
  * - **Only `git` writes inside `.git`**: this is the one caller of the filesystem that is not fenced
  *   (`files.refuseGit`).
- * - **A failed clone leaves nothing** behind, and a 429 or 5xx from GitHub is retried twice.
+ * - **A failed clone leaves nothing** behind, and a 429 or 5xx is retried twice.
  *
- * GitHub over HTTPS only (`https://github.com/<owner>/<repository>`). Clones are shallow (depth 1,
- * one branch): the workspace is the object's SQL, and history is rarely what the agent needs.
+ * Over HTTPS only: the proposals' remote, or a public `https://github.com/<owner>/<repository>`.
+ * Clones are shallow (depth 1, one branch): the workspace is the object's SQL, and history is rarely
+ * what the agent needs.
  */
+
+import type { ProposalsRemote } from "@pikit/contracts";
 
 import { createTwoFilesPatch } from "diff";
 import git from "isomorphic-git";
@@ -29,12 +32,8 @@ import { type Files, fsError, type Node, normalize, resolvePath } from "./files.
 
 export interface GitOptions {
   files: Files;
-  /** The connected repository, `owner/name`, read at each command that needs it; `undefined` while none is. */
-  repository(): Promise<string | undefined>;
-  /** A token for the connected repository; rejects (saying how to connect) while none is. */
-  token(): Promise<string>;
-  /** What every pushed branch starts with. */
-  branchPrefix: string;
+  /** Where proposals go (`proposals.remote()`), read at each command that needs it; `undefined` while nowhere. */
+  remote(): Promise<ProposalsRemote | undefined>;
   /** Who commits. */
   author?: { name: string; email: string };
 }
@@ -49,7 +48,8 @@ const AUTHOR = { name: "pikit agent", email: "agent@pikit.invalid" };
 const USAGE =
   "usage: git clone <https://github.com/owner/repo> [dir] | checkout -b <branch> | checkout <branch> | status | diff [--staged] [path] | add <path>... | -A | commit [-a] -m <message> | log [-n N] [--oneline] | push origin <branch>\n";
 const SUPPORTED = ["status", "diff", "add", "commit", "log", "push", "checkout"];
-const NOT_CONNECTED = "GitHub is not connected: an operator connects it in the dashboard's Settings → GitHub";
+const NOT_CONNECTED =
+  "nothing to push to: proposals are not set up here (on Cloudflare: proposals-github, with GitHub connected in the dashboard's Settings → GitHub)";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -57,6 +57,11 @@ const decoder = new TextDecoder();
 export function githubRepository(url: string): { owner: string; name: string } | undefined {
   const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(url.trim());
   return match?.[1] !== undefined && match[2] !== undefined ? { owner: match[1], name: match[2] } : undefined;
+}
+
+/** A remote's URL as compared: lowercase, without a trailing `/` or `.git`. */
+export function remoteKey(url: string): string {
+  return url.trim().toLowerCase().replace(/\/+$/, "").replace(/\.git$/, "");
 }
 
 /** Whether `branch` starts with `prefix` and is a plain, safe branch name after it. */
@@ -127,16 +132,17 @@ export function createGit(options: GitOptions) {
   const { files } = options;
   const fs = gitFs(files);
   const author = options.author ?? AUTHOR;
-  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-  /** Whether `repository` is the connected one. */
-  const connected = async (repository: { owner: string; name: string }) => {
-    const current = await options.repository();
-    return current !== undefined && same(current, `${repository.owner}/${repository.name}`);
+  /** Where proposals go, when it is a remote this workspace reaches (HTTPS); a path is another machine's. */
+  const target = async (): Promise<Extract<ProposalsRemote, { kind: "https" }> | undefined> => {
+    const remote = await options.remote();
+    if (remote === undefined) return undefined;
+    if (remote.kind !== "https") throw new Error(`the proposals' remote is a path on another machine (${remote.path}): this workspace pushes only over HTTPS`);
+    return remote;
   };
   const ok = (stdout: string): CommandResult => ({ stdout: stdout === "" || stdout.endsWith("\n") ? stdout : `${stdout}\n`, stderr: "", exitCode: 0 });
   const fail = (message: string, exitCode = 1): CommandResult => ({ stdout: "", stderr: `${message}\n`, exitCode });
-  /** Every request to github.com carries the token, when there is one (the key isomorphic-git's `onAuth` sets too). */
-  const headersFor = (token: string | undefined) => (token === undefined ? {} : { Authorization: `Basic ${btoa(`x-access-token:${token}`)}` });
+  /** Every request to the remote carries its authorization, when there is one. */
+  const headersFor = (authorization: string | undefined) => (authorization === undefined ? {} : { Authorization: authorization });
 
   /** A real clone has its remote-tracking branch and a commit; a directory without them is half made. */
   const isClone = async (dir: string) => {
@@ -149,9 +155,8 @@ export function createGit(options: GitOptions) {
 
   const originOf = async (dir: string) => {
     const url = (await git.getConfig({ fs, dir, path: "remote.origin.url" })) as string | undefined;
-    const repository = url === undefined ? undefined : githubRepository(url);
-    if (url === undefined || repository === undefined) throw new Error("this repository's origin is not a GitHub repository");
-    return { url, ...repository };
+    if (url === undefined) throw new Error("this repository has no origin");
+    return url;
   };
 
   /**
@@ -210,22 +215,24 @@ export function createGit(options: GitOptions) {
   };
 
   async function clone(args: string[], cwd: string): Promise<CommandResult> {
-    const [url, target] = args.filter((arg) => !arg.startsWith("-"));
+    const [url, into] = args.filter((arg) => !arg.startsWith("-"));
     if (url === undefined) return fail(USAGE, 129);
-    const repository = githubRepository(url);
-    if (repository === undefined) return fail(`fatal: only GitHub repositories over HTTPS can be cloned here (https://github.com/<owner>/<repository>), not '${url}'`, 128);
-    const dir = resolvePath(cwd, target ?? repository.name);
+    const remote = await target();
+    const pushable = remote !== undefined && remoteKey(remote.url) === remoteKey(url);
+    if (!pushable && githubRepository(url) === undefined) {
+      return fail(`fatal: only the proposals' remote, or a GitHub repository over HTTPS (https://github.com/<owner>/<repository>), can be cloned here, not '${url}'`, 128);
+    }
+    const name = remoteKey(url).split("/").at(-1) || "repository";
+    const dir = resolvePath(cwd, into ?? name);
     const existing = files.lstat(dir);
     if (existing !== undefined && (existing.kind !== "dir" || files.list(dir).length > 0)) {
-      return fail(`fatal: destination path '${target ?? repository.name}' already exists and is not an empty directory`, 128);
+      return fail(`fatal: destination path '${into ?? name}' already exists and is not an empty directory`, 128);
     }
-    // The connected repository's token for the connected repository only: any other is cloned without one.
-    const pushable = await connected(repository);
-    const token = pushable ? await options.token() : undefined;
-    const onAuth = token === undefined ? undefined : () => ({ username: "x-access-token", password: token });
+    // The remote's authorization for the proposals' remote only: any other is cloned without one.
+    const authorization = pushable ? await remote.authorization() : undefined;
     try {
       await retrying(
-        () => git.clone({ fs, http, dir, url, depth: 1, singleBranch: true, headers: headersFor(token), ...(onAuth !== undefined && { onAuth }) }),
+        () => git.clone({ fs, http, dir, url, depth: 1, singleBranch: true, headers: headersFor(authorization) }),
         // Never leave a half clone behind.
         () => files.removeTree(dir),
       );
@@ -234,7 +241,7 @@ export function createGit(options: GitOptions) {
     }
     const branch = await git.currentBranch({ fs, dir });
     const count = (await git.listFiles({ fs, dir })).length;
-    const push = pushable ? `you may push branches ${options.branchPrefix}… to it` : "read-only: it is not the connected repository, so nothing is pushed to it";
+    const push = pushable ? `you may push branches ${remote.branchPrefix}… to it` : "read-only: it is not where proposals go, so nothing is pushed to it";
     return ok(`Cloned ${url} into ${dir} (branch ${branch}, ${count} files, latest commit only); ${push}.`);
   }
 
@@ -389,18 +396,19 @@ export function createGit(options: GitOptions) {
 
   async function push(dir: string, args: string[]): Promise<CommandResult> {
     const [remote, named, extra] = args.filter((arg) => !arg.startsWith("-"));
-    if (remote !== "origin" || named === undefined || extra !== undefined) return fail(`usage: git push origin ${options.branchPrefix}<topic>`, 129);
+    if (remote !== "origin" || named === undefined || extra !== undefined) return fail("usage: git push origin <branch>", 129);
+    const proposals = await target();
+    if (proposals === undefined) return fail(`fatal: ${NOT_CONNECTED}`);
+    const prefix = proposals.branchPrefix;
     const branch = named === "HEAD" ? await git.currentBranch({ fs, dir }) : named;
-    if (branch === undefined || branch === null || !branchAllowed(branch, options.branchPrefix)) {
-      return fail(`fatal: pushing is allowed only to branches ${options.branchPrefix}<topic> (letters, digits, . _ / -), not '${named}'`);
+    if (branch === undefined || branch === null || !branchAllowed(branch, prefix)) {
+      return fail(`fatal: pushing is allowed only to branches ${prefix}<topic> (letters, digits, . _ / -), not '${named}'`);
     }
     if (!(await isClone(dir))) return fail(`fatal: ${dir} is not a complete clone: clone it again`);
     if (!(await git.listBranches({ fs, dir })).includes(branch)) return fail(`error: src refspec ${branch} does not match any (create it first: git checkout -b ${branch})`);
     const origin = await originOf(dir);
-    const current = await options.repository();
-    if (current === undefined) return fail(`fatal: ${NOT_CONNECTED}`);
-    if (!same(current, `${origin.owner}/${origin.name}`)) return fail(`fatal: pushing to ${origin.owner}/${origin.name} is not allowed here: only to ${current}, the connected repository`);
-    const token = await options.token();
+    if (remoteKey(origin) !== remoteKey(proposals.url)) return fail(`fatal: pushing to ${origin} is not allowed here: only to ${proposals.url}, where proposals go`);
+    const authorization = await proposals.authorization();
     const result = await git.push({
       fs,
       http,
@@ -410,11 +418,10 @@ export function createGit(options: GitOptions) {
       remoteRef: branch,
       // The agent's own branches: it may rewrite them.
       force: true,
-      headers: headersFor(token),
-      onAuth: () => ({ username: "x-access-token", password: token }),
+      headers: headersFor(authorization),
     });
     if (!result.ok) return fail(`fatal: the push was rejected: ${result.error ?? JSON.stringify(result.refs)}`);
-    return ok(`To https://github.com/${origin.owner}/${origin.name}\n * ${branch} -> ${branch}\nThe operator sees it as a proposal in the dashboard.`);
+    return ok(`To ${origin}\n * ${branch} -> ${branch}\nThe operator sees it as a proposal in the dashboard.`);
   }
 
   return {

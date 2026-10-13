@@ -25,7 +25,7 @@ import Type from "typebox";
 import Value from "typebox/value";
 import runtimePi from "./index.ts";
 
-const lookup = defineTool({ name: "lookup", description: "Looks up", parameters: Type.Object({}), execute: async () => ({ content: [{ type: "text", text: "found" }] }) }) as unknown as AgentTool;
+const lookup = defineTool({ name: "lookup", description: "Looks up", parameters: Type.Object({}), execute: async () => ({ output: [{ type: "text", text: "found" }] }) }) as unknown as AgentTool;
 
 /** What each model request was told: its system prompt's instructions. */
 type SystemEntry = { role: string; sections?: { instructions?: string } };
@@ -67,7 +67,7 @@ function project() {
   };
 }
 
-/** `settings` in memory, validating against what was declared. */
+/** `settings` in memory, and `set`, an operator's change, validated against what was declared as settings-store's routes validate it. */
 function memorySettings() {
   const stored = new Map<string, SettingsValue>();
   const declared = new Map<string, { schema: object; defaults: SettingsValue }>();
@@ -78,16 +78,14 @@ function memorySettings() {
       if (found === undefined) throw new SettingsError("unknown_component", component);
       return structuredClone({ ...found.defaults, ...stored.get(component) }) as T;
     },
-    async set(component, value) {
-      const found = declared.get(component);
-      if (found === undefined) throw new SettingsError("unknown_component", component);
-      if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new SettingsError("invalid_value", component);
-      stored.set(component, structuredClone(value));
-      return value;
-    },
-    sections: async () => [],
   };
-  return { provider, component: defineComponent({ name: "settings-test", setup: (pikit) => pikit.provide("settings", provider) }) };
+  const set = async (component: string, value: SettingsValue) => {
+    const found = declared.get(component);
+    if (found === undefined) throw new SettingsError("unknown_component", component);
+    if (!Value.Check(found.schema as never, { ...found.defaults, ...value })) throw new Error(`settings-test: the schema refuses ${component}'s value`);
+    stored.set(component, structuredClone(value));
+  };
+  return { provider, set, component: defineComponent({ name: "settings-test", setup: (pikit) => pikit.provide("settings", provider) }) };
 }
 
 /** An App of runtime-pi with `extra`, and a channel's way to ask an agent and wait for the answer. */
@@ -172,12 +170,12 @@ test("a live agent gets the operator's overrides, as a code agent does", async (
   const parts = project();
   parts.agents.push({ name: "support", model: "faux/scripted", systemPrompt: "Help customers." });
   const settings = memorySettings();
-  const { app, ctx, conversation, ask } = await started([parts.component, settings.component]);
-  await settings.provider.set("runtime-pi", { support: { systemPrompt: "Overridden." } }, { id: "ops" }, ctx);
+  const { app, conversation, ask } = await started([parts.component, settings.component]);
+  await settings.set("runtime-pi", { support: { systemPrompt: "Overridden." } });
   await ask(await conversation("support"), "r1", "hello");
   expect(parts.told.at(-1)).toContain("Overridden.");
   // An override's fields are checked against the App, a live agent's too.
-  await expect(settings.provider.set("runtime-pi", { support: { model: "gone/model" } }, { id: "ops" }, ctx)).rejects.toThrow(SettingsError);
+  await expect(settings.set("runtime-pi", { support: { model: "gone/model" } })).rejects.toThrow("the schema refuses");
   await app.stop();
 }, 30_000);
 

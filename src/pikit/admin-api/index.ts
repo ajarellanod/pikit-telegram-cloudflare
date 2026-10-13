@@ -37,11 +37,13 @@
  *   conversation a reset left behind is `409 not_current`. A reset's new conversation is its key's
  *   current one, with the key's agent, before any message reaches it: it is talked to at once.
  *
- * Targets: `server` and `durable`.
- * - **On a server** this export is the whole API, over the App's own contracts (`createLocalBackend`):
+ * Targets: `server` and `durable`. It never reads the target: in `start`, `actor.inbox`'s `scope` says
+ * where the index is (`placements`): every key's actor (`"all"`, or no `actor.inbox`) or one key's
+ * (`"one"`).
+ * - **On a server** (`"all"`) this export is the whole API, over the App's own contracts (`createLocalBackend`):
  *   every conversation, live events from `agent.observe`'s `watch`; the index is a table of the App's
  *   `storage.sql`, filled at start in the background from every conversation the runtime holds.
- * - **On Cloudflare** it goes in each conversation's Durable Object (the default App), and the routes
+ * - **On Cloudflare** (`"one"`) it goes in each conversation's Durable Object (the default App), and the routes
  *   are the Worker's half's (`worker.ts`, `export const worker`). Here it answers the Worker's calls
  *   about this object's conversations (`calls.ts`), and tells the index (the object `admin-api:index`)
  *   of their activity: when a message is dispatched, a resumed run starts, a run settles or fails, a
@@ -51,7 +53,7 @@
  */
 
 import { type AppContext, BACKGROUND_CONTEXT, defineComponent, withAbortSignal } from "@pikit/core";
-import { type AgentCommand, type AgentObserver, type ConversationRef, isCommandName } from "@pikit/contracts";
+import { type ActorInbox, type ActorMailbox, type AgentCommand, type AgentObserver, type ConversationRef, isCommandName } from "@pikit/contracts";
 import { type ApiAgent, cleanTitle } from "./api.ts";
 import { createAssets } from "./assets.ts";
 import { agentOf, createLocalBackend } from "./backend.ts";
@@ -93,7 +95,7 @@ export default defineComponent({
     const sql = pikit.use("storage.sql");
     // Delivery: shown when an outbound queue is installed.
     const queue = pikit.useOptional("outbound.queue");
-    // On Cloudflare (`durable`): the Worker's calls, and the index's messages.
+    // Whose actor this App is (`scope`); where it is one key's: the Worker's calls, and the index's messages.
     const inbox = pikit.useOptional("actor.inbox");
     const mailbox = pikit.useOptional("actor.mailbox");
     // The agents, for `GET /admin/api/agents` and a web search asked of one.
@@ -104,7 +106,6 @@ export default defineComponent({
     const commands = pikit.useKeyed("agent.command");
     // Titles: a model's text, through the runtime's models.
     const completion = pikit.useOptional("model.complete");
-    const durable = pikit.target === "durable";
     const assets = createAssets(DASHBOARD_FILES);
     const index = createConversationIndex(() => sql.get());
     const contracts = {
@@ -142,7 +143,7 @@ export default defineComponent({
     const newConversation: AgentCommand = {
       description: "Start a new conversation: this one is kept, and its key starts again empty",
       async run(conversation, _args, ctx) {
-        const reset = await registry.get().reset(conversation.key, ctx);
+        const reset = await registry.get().reset(conversation.key, undefined, ctx);
         if (reset === undefined) throw new Error("this conversation's key points to no conversation");
         return { text: "A new conversation started; the previous one is kept, and can be read." };
       },
@@ -167,15 +168,23 @@ export default defineComponent({
     });
 
     /**
-     * Records activity in the index: the App's own on a server, the index object's on Cloudflare (a
-     * message). Missed, the next activity or the App's next start records it again.
+     * Where the index is, chosen in start by `actor.inbox`'s `scope` (`placements` below): the App's
+     * own when it is every key's actor, the index object's when it is one key's.
      */
+    interface Placement {
+      /** Records activity in the index. */
+      tell(entries: IndexedConversation[], ctx: AppContext): Promise<void>;
+      /** Whether a run's start is told: where telling is a message, a run not resumed was told when dispatched. */
+      tellsStarted(resumed: boolean): boolean;
+      start(ctx: AppContext): Promise<void>;
+    }
+    let placement: Placement | undefined;
+
+    /** Records activity in the index. Missed, the next activity or the App's next start records it again. */
     const seen = async (entries: IndexedConversation[], ctx: AppContext): Promise<void> => {
-      if (entries.length === 0) return;
+      if (entries.length === 0 || placement === undefined) return;
       try {
-        if (!durable) return await index.seen(entries);
-        const send = mailbox.get();
-        if (send !== undefined) await send.send(INDEX_KEY, SEEN, { entries: entries.map((entry) => ({ ...entry })) }, ctx);
+        await placement.tell(entries, ctx);
       } catch (error) {
         ctx.logger.warn("admin-api: the conversation index did not take this conversation's activity; its next activity tells it again", {
           conversation: entries[0]?.key,
@@ -189,7 +198,7 @@ export default defineComponent({
     // In the caller's context, once the message is durable: the most reliable moment.
     pikit.on("agent.dispatched", ({ conversation, admission }, ctx) => (admission.kind === "duplicate" ? undefined : active(conversation, ctx)));
     // On Cloudflare a run that is not resumed was dispatched in this object just before: one message fewer.
-    pikit.on("agent.started", ({ conversation, resumed }, ctx) => (durable && !resumed ? undefined : active(conversation, ctx)));
+    pikit.on("agent.started", ({ conversation, resumed }, ctx) => (placement?.tellsStarted(resumed) === true ? active(conversation, ctx) : undefined));
     pikit.on("agent.settled", (result, ctx) => {
       // In the background: no event or request waits for a title.
       titler.settled(result, ctx.derive(() => background));
@@ -226,11 +235,12 @@ export default defineComponent({
     /** What outlives the events: titles, the index's filling. Cancelled at stop. */
     let background = BACKGROUND_CONTEXT;
 
-    return {
-      async start(ctx) {
-        stopping = new AbortController();
-        background = withAbortSignal(stopping.signal, BACKGROUND_CONTEXT);
-        if (!durable) {
+    const placements = {
+      /** Every key's actor (a server): the index is a table of this App, which serves the routes. */
+      all: (): Placement => ({
+        tell: (entries) => index.seen(entries),
+        tellsStarted: () => true,
+        async start(ctx) {
           if (assets.built()) ctx.logger.info("admin-api: the dashboard is served at /admin/", { files: assets.size() });
           else ctx.logger.info("admin-api: no dashboard is built; the API alone is served at /admin/api/");
           // In the background: a server with thousands of conversations starts at once.
@@ -238,19 +248,36 @@ export default defineComponent({
             (count) => ctx.logger.info("admin-api: the conversation index has every conversation of the runtime", { conversations: count }),
             (error: unknown) => ctx.logger.warn("admin-api: the conversation index was not filled from the runtime; events keep it", { error: error instanceof Error ? error.message : String(error) }),
           );
-          return;
-        }
+        },
+      }),
+      /** One key's actor (a Durable Object): the index is the index object's; this App answers the Worker's calls. */
+      one: (calls: ActorInbox, send: ActorMailbox): Placement => ({
+        tell: (entries, ctx) => send.send(INDEX_KEY, SEEN, { entries: entries.map((entry) => ({ ...entry })) }, ctx),
+        tellsStarted: (resumed) => resumed,
+        async start(ctx) {
+          // An object's conversations are all of its key.
+          answerCalls(calls, (key) => createLocalBackend({ ...contracts, keyOf: async () => key }), index);
+          // This object's conversations (a few): the index learns of them even if their events were missed.
+          await backfill(observe.get(), ctx).catch((error: unknown) =>
+            ctx.logger.warn("admin-api: this object's conversations were not told to the index", { error: error instanceof Error ? error.message : String(error) }),
+          );
+        },
+      }),
+    };
+
+    return {
+      async start(ctx) {
+        stopping = new AbortController();
+        background = withAbortSignal(stopping.signal, BACKGROUND_CONTEXT);
         const calls = inbox.get();
-        const missing = [calls === undefined && "actor.inbox", mailbox.get() === undefined && "actor.mailbox"].filter(Boolean);
-        if (calls === undefined || missing.length > 0) {
-          throw new Error(`admin-api: in a Durable Object's App it answers the Worker's calls and tells the conversation index, which needs ${missing.join(", ")}: install platform-cloudflare`);
+        if (calls === undefined || calls.scope === "all") {
+          placement = placements.all();
+        } else {
+          const send = mailbox.get();
+          if (send === undefined) throw new Error("admin-api: in an App that is one key's actor it tells the conversation index, which needs actor.mailbox");
+          placement = placements.one(calls, send);
         }
-        // An object's conversations are all of its key.
-        answerCalls(calls, (key) => createLocalBackend({ ...contracts, keyOf: async () => key }), index);
-        // This object's conversations (a few): the index learns of them even if their events were missed.
-        await backfill(observe.get(), ctx).catch((error: unknown) =>
-          ctx.logger.warn("admin-api: this object's conversations were not told to the index", { error: error instanceof Error ? error.message : String(error) }),
-        );
+        await placement.start(ctx);
       },
       async stop() {
         stopping?.abort();
